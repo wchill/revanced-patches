@@ -637,7 +637,9 @@ public final class app/revanced/patches/reddit/customclients/FixSLinksPatchKt {
 
 public final class app/revanced/patches/reddit/customclients/SpoofClientPatchKt {
 	public static final fun spoofClientPatch (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Lapp/revanced/patcher/patch/BytecodePatch;
+	public static final fun spoofClientPatch (Lkotlin/jvm/functions/Function3;)Lapp/revanced/patcher/patch/BytecodePatch;
 	public static synthetic fun spoofClientPatch$default (Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lapp/revanced/patcher/patch/BytecodePatch;
+	public static final fun spoofUserAgentPatch (Lkotlin/jvm/functions/Function2;)Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
 public final class app/revanced/patches/reddit/customclients/baconreader/api/SpoofClientPatchKt {
@@ -658,6 +660,7 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/ads/
 
 public final class app/revanced/patches/reddit/customclients/boostforreddit/api/SpoofClientPatchKt {
 	public static final fun getSpoofClientPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
+	public static final fun getUserAgentPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
 public final class app/revanced/patches/reddit/customclients/boostforreddit/fix/downloads/FixAudioMissingInDownloadsPatchKt {
