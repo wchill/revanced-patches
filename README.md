@@ -26,6 +26,11 @@ I get "Error: Invalid request to Oauth API"
 I still get 403 Blocked
 
 * User agent needs to follow the format above. If you fill it in with garbage, it will eventually be blocked by reddit. Also, reddit blocks any mention of rubenmayayo in the user agent.
+* Your user agent can also be blocked due to other terms: a user reported that he was getting 403 after patching, and it turned out to be because his username included `isfun` (which triggers a block from reddit's side due to them blocking the app Reddit is Fun).
+
+I get 401 when I open the app
+
+* You probably created a web app instead of an installed app. Delete the app, create an installed app and then repatch with the new client ID.
 
 I'm getting 400 Bad Request while logged in
 
