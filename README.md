@@ -19,6 +19,10 @@ See https://github.com/ReVanced/revanced-patches/issues/4549#issuecomment-270296
 
 # FAQ
 
+The patches don't show up in the patcher after I change the source
+
+* The patcher is buggy and sometimes the patches don't show up. Try force closing the app, clearing app cache and then reopening the app (may take several attempts). You can also try toggling Wi-Fi off and/or toggling airplane mode before reopening the app.
+
 I get "Error: Invalid request to Oauth API"
 
 * Your redirect URI is probably wrong. It has to match exactly between the patching settings and your reddit installed app. If you're reusing an installed app you made before, then update the URI at https://www.reddit.com/prefs/apps/. Make sure you don't add `/` at the end.
