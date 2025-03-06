@@ -31,6 +31,14 @@ I'm getting 400 Bad Request while logged in
 
 * Try logging out and logging back in if you didn't uninstall the app in step 1
 
+I can't check the box for Spoof client; I get `Notice: This patch contains a required option that is not supported by this app`
+
+* Go to settings and toggle "Version compatibility check". I don't know why this fixes it
+
+I get a `null: null` error when I open the app
+
+* Your client ID is incorrect, check that you copied it correctly
+
 Can I skip any steps if I was using the moderator workaround
 
 * No, you have to follow all of the above steps
