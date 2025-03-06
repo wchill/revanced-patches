@@ -1,105 +1,36 @@
-<p align="center">
-  <picture>
-    <source
-      width="256px"
-      media="(prefers-color-scheme: dark)"
-      srcset="assets/revanced-headline/revanced-headline-vertical-dark.svg"
-    >
-    <img 
-      width="256px"
-      src="assets/revanced-headline/revanced-headline-vertical-light.svg"
-    >
-  </picture>
-  <br>
-  <a href="https://revanced.app/">
-     <picture>
-         <source height="24px" media="(prefers-color-scheme: dark)" srcset="assets/revanced-logo/revanced-logo.svg" />
-         <img height="24px" src="assets/revanced-logo/revanced-logo.svg" />
-     </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="https://github.com/ReVanced">
-       <picture>
-           <source height="24px" media="(prefers-color-scheme: dark)" srcset="https://i.ibb.co/dMMmCrW/Git-Hub-Mark.png" />
-           <img height="24px" src="https://i.ibb.co/9wV3HGF/Git-Hub-Mark-Light.png" />
-       </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="http://revanced.app/discord">
-       <picture>
-           <source height="24px" media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/13122796/178032563-d4e084b7-244e-4358-af50-26bde6dd4996.png" />
-           <img height="24px" src="https://user-images.githubusercontent.com/13122796/178032563-d4e084b7-244e-4358-af50-26bde6dd4996.png" />
-       </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="https://reddit.com/r/revancedapp">
-       <picture>
-           <source height="24px" media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/13122796/178032351-9d9d5619-8ef7-470a-9eec-2744ece54553.png" />
-           <img height="24px" src="https://user-images.githubusercontent.com/13122796/178032351-9d9d5619-8ef7-470a-9eec-2744ece54553.png" />
-       </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="https://t.me/app_revanced">
-      <picture>
-         <source height="24px" media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/13122796/178032213-faf25ab8-0bc3-4a94-a730-b524c96df124.png" />
-         <img height="24px" src="https://user-images.githubusercontent.com/13122796/178032213-faf25ab8-0bc3-4a94-a730-b524c96df124.png" />
-      </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="https://x.com/revancedapp">
-      <picture>
-         <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/93124920/270180600-7c1b38bf-889b-4d68-bd5e-b9d86f91421a.png">
-         <img height="24px" src="https://user-images.githubusercontent.com/93124920/270108715-d80743fa-b330-4809-b1e6-79fbdc60d09c.png" />
-      </picture>
-   </a>&nbsp;&nbsp;&nbsp;
-   <a href="https://www.youtube.com/@ReVanced">
-      <picture>
-         <source height="24px" media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/13122796/178032714-c51c7492-0666-44ac-99c2-f003a695ab50.png" />
-         <img height="24px" src="https://user-images.githubusercontent.com/13122796/178032714-c51c7492-0666-44ac-99c2-f003a695ab50.png" />
-     </picture>
-   </a>
-   <br>
-   <br>
-   Continuing the legacy of Vanced
-</p>
+This is a fork of https://github.com/ReVanced/revanced-patches that includes patches (https://github.com/ReVanced/revanced-patches/pull/4551) to help Boost evade detection by Reddit.
 
-# 🧩 ReVanced Patches
+# Instructions
+Instructions on usage (from https://www.reddit.com/r/revancedapp/comments/1j4s7bd/how_to_fix_the_403_error_for_boost_using_revanced/):
 
-![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/ReVanced/revanced-patches/release.yml)
-![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)
+1. Back up your settings in Boost and then uninstall it.
 
-This repository contains a collection of ReVanced Patches.
+2. Grab a fresh copy of the Boost APK from [here](https://www.apkmirror.com/apk/ruben-mayayo/boost-for-reddit/boost-for-reddit-1-12-12-release/boost-for-reddit-1-12-12-android-apk-download/). Don't install it.
 
-## ❓ About
+3. Change your ReVanced Manager settings to point to my patches as shown [here](https://github.com/user-attachments/assets/0094627f-fb5e-45fd-97f3-6ee24d21027e)
 
-Patches are small modifications to Android apps that allow you to change the behavior of or add new features,
-block ads, customize the appearance, and much more.
+4. Create an installed app [here](https://www.reddit.com/prefs/apps/). For redirect uri, set it to `http://127.0.0.1:8080`. You can leave about url blank.
 
-## 💪 Features
+5. Open the Boost APK in ReVanced Manager and make sure the Spoof client patch is enabled. For OAuth client ID, copy the random looking text from https://www.reddit.com/prefs/apps (below "Installed app"). Leave Redirect URI alone. For User agent, set it to something like `android:com.yourusername.reddit:v1.0 (by /u/yourusername)` (replace with your username).
 
-Some of the features the patches provide are:
+6. Patch and install, your Boost should work now. You can restore your settings using the backup you made earlier.
 
-* 🚫 **Block ads**: Say goodbye to ads
-* ⭐ **Customize your app**: Personalize the appearance of apps with various layouts and themes
-* 🪄 **Add new features**: Extend the functionality of apps with lots of new features
-* ⚙️ **Miscellaneous and general purpose**: Rename packages, enable debugging, disable screen capture restrictions,
-  export activities, etc.
-* ✨ **And much more!**
+See https://github.com/ReVanced/revanced-patches/issues/4549#issuecomment-2702966919 for more details.
 
-For a complete list of all available patches, visit [revanced.app/patches](https://revanced.app/patches).
+# FAQ
 
-## 🚀 How to get started
+I get "Error: Invalid request to Oauth API"
 
-You can use [ReVanced CLI](https://github.com/ReVanced/revanced-cli) or [ReVanced Manager](https://github.com/ReVanced/revanced-manager) to use ReVanced Patches.
+* Your redirect URI is probably wrong. It has to match exactly between the patching settings and your reddit installed app. If you're reusing an installed app you made before, then update the URI at https://www.reddit.com/prefs/apps/. Make sure you don't add `/` at the end.
 
-## 📚 Everything else
+I still get 403 Blocked
 
-### 📙 Contributing
+* User agent needs to follow the format above. If you fill it in with garbage, it will eventually be blocked by reddit. Also, reddit blocks any mention of rubenmayayo in the user agent.
 
-Thank you for considering contributing to ReVanced Patches. You can find the contribution guidelines [here](CONTRIBUTING.md).
+I'm getting 400 Bad Request while logged in
 
-### 🛠️ Building
+* Try logging out and logging back in if you didn't uninstall the app in step 1
 
-To build ReVanced Patches, you can follow the [ReVanced documentation](https://github.com/ReVanced/revanced-documentation).
+Can I skip any steps if I was using the moderator workaround
 
-## 📜 Licence
-
-ReVanced Patches is licensed under the GPLv3 license. Please see the [license file](LICENSE) for more information.
-[tl;dr](https://www.tldrlegal.com/license/gnu-general-public-license-v3-gpl-3) you may copy, distribute and modify ReVanced Patches as long as you track changes/dates in source files.
-Any modifications to ReVanced Patches must also be made available under the GPL,
-along with build & install instructions.
+* No, you have to follow all of the above steps
