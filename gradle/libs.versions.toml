@@ -15,10 +15,15 @@ guava = "33.4.0-jre"
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 
+jackson-databind-boost = { module = "com.fasterxml.jackson.core:jackson-databind", version = "2.6.0" }
+jraw-boost = { module = "com.github.wchill:JRAW", version = "454a2f9" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
+
+[bundles]
+boost = ["jackson-databind-boost", "jraw-boost", "guava", "okhttp"]

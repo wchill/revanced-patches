@@ -12,6 +12,19 @@ patches {
     }
 }
 
+repositories {
+    mavenCentral()
+    google()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/revanced/registry")
+        credentials {
+            username = providers.gradleProperty("gpr.user").getOrElse(System.getenv("GITHUB_ACTOR"))
+            password = providers.gradleProperty("gpr.key").getOrElse(System.getenv("GITHUB_TOKEN"))
+        }
+    }
+}
+
 dependencies {
     // Required due to smali, or build fails. Can be removed once smali is bumped.
     implementation(libs.guava)
@@ -48,10 +61,10 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/revanced/revanced-patches")
+            url = uri("https://maven.pkg.github.com/wchill/revanced-patches")
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = providers.gradleProperty("gpr.user").getOrElse(System.getenv("GITHUB_ACTOR"))
+                password = providers.gradleProperty("gpr.key").getOrElse(System.getenv("GITHUB_TOKEN"))
             }
         }
     }
