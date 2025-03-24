@@ -30,6 +30,12 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "apksig" }
 
+jackson-databind-boost = { module = "com.fasterxml.jackson.core:jackson-databind", version = "2.6.0" }
+jraw-boost = { module = "com.github.wchill:JRAW", version = "454a2f9" }
+
 [plugins]
 android-library = { id = "com.android.library" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
+
+[bundles]
+boost = ["jackson-databind-boost", "jraw-boost", "guava", "okhttp"]
