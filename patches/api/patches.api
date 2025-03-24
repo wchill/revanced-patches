@@ -663,6 +663,11 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/api/
 	public static final fun getUserAgentPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
+public final class app/revanced/patches/reddit/customclients/boostforreddit/debug/HookExceptionHandlerKt {
+	public static final field EXTENSION_CLASS_DESCRIPTOR Ljava/lang/String;
+	public static final fun getHookExceptionHandler ()Lapp/revanced/patcher/patch/BytecodePatch;
+}
+
 public final class app/revanced/patches/reddit/customclients/boostforreddit/fix/downloads/FixAudioMissingInDownloadsPatchKt {
 	public static final fun getFixAudioMissingInDownloadsPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
@@ -678,6 +683,13 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/fix/
 
 public final class app/revanced/patches/reddit/customclients/boostforreddit/misc/extension/SharedExtensionPatchKt {
 	public static final fun getSharedExtensionPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
+}
+
+public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/UndeleteSubmissionsPatchKt {
+	public static final field EXTENSION_CLASS_DESCRIPTOR Ljava/lang/String;
+	public static final field EXTRA_EMOJI_CONTEXT_KEY Ljava/lang/String;
+	public static final field EXTRA_EMOJI_GETTER Ljava/lang/String;
+	public static final fun getUndeletePostsPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
 public final class app/revanced/patches/reddit/customclients/infinityforreddit/api/SpoofClientPatchKt {
