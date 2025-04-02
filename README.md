@@ -58,6 +58,7 @@ I'm getting 400 Bad Request while logged in
 I can't check the box for Spoof client; I get `Notice: This patch contains a required option that is not supported by this app`
 
 * Go to settings and toggle "Version compatibility check". I don't know why this fixes it
+* Ensure the User Agent and OAuth client ID are set up first, then tap `Load patch selection` in the three dots menu if checking the boxes manually still doesn't work.
 
 I get a `null: null` error when I open the app
 
