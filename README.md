@@ -5,14 +5,22 @@ This is a fork of https://github.com/ReVanced/revanced-patches that includes ext
   * Official patches do not patch redirect URI, and user agent is hardcoded. This makes Boost installations patched with official patches very easily detectable by Reddit.
   * See https://github.com/ReVanced/revanced-patches/pull/4551 for context.
 * The content of deleted Reddit posts and comments can be loaded from [Project Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift).
-  * This only works for text: images/videos originally hosted on reddit cannot be restored.
-  * Not all content can be restored, only whatever is available on Arctic Shift.
+  * This only works for text and images, and not all content can be restored. Videos are unlikely to be available.
   * Posts/comments that were deleted are marked as follows:
-    * 🗑️ if deleted by the author
-    * 🧹 if deleted by a subreddit mod
-    * 🚨 if deleted by reddit admins
+    * 🗑️ if removed by the author
+    * 🧹 if removed by a subreddit mod
+    * 🚓 if removed by reddit admins
+    * 🤖 if removed by anti-spam
+    * ©️ if removed due to a takedown notice
+    * 👿 if removed by Anti-Evil Operations
+    * 🚫 if the subreddit is banned
+  * Banned subreddits can be browsed with this functionality; however, rules/wiki pages are unavailable and the only sort option is by new.
+  * In order to view a deleted post, you need to already have a direct link to the post. Subreddit feeds will not show deleted posts (unless the subreddit was banned); this is because of the lack of sorting options and the high likelihood of seeing a ton of spam posts.
   * Currently, this functionality is not working on user profiles. Removed posts you encounter on user pages need to be opened and refreshed for their content to load.
-  * This feature makes extra network requests, so posts will load a little slower.
+  * This feature makes extra network requests, so posts will load a little slower. In particular, retrieving images from the Wayback Machine is heavily ratelimited.
+    * Caching is implemented to try and limit the impact of this.
+* Imgur images and albums are automatically loaded from the Wayback Machine if a 404 is detected.
+* The context menu for posts now contains additional options for opening a site in the Wayback Machine or archive.is. This is useful for if the undeleting functionality has issues or you want to bypass a content paywall.
 
 ## Instructions for patching user agent
 Instructions on usage (from https://www.reddit.com/r/revancedapp/comments/1j4s7bd/how_to_fix_the_403_error_for_boost_using_revanced/):
