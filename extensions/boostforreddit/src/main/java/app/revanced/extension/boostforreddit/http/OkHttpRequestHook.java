@@ -6,6 +6,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import app.revanced.extension.boostforreddit.http.arcticshift.ArcticShiftThrottlingInterceptor;
+import app.revanced.extension.boostforreddit.http.imgur.ImgurUndeleteInterceptor;
+import app.revanced.extension.boostforreddit.http.reddit.RedditMediaUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubredditUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackThrottlingInterceptor;
@@ -67,6 +69,8 @@ public class OkHttpRequestHook {
 
     public static OkHttpClient.Builder installInterceptor(OkHttpClient.Builder builder) {
         return builder
+                .addInterceptor(new ImgurUndeleteInterceptor())
+                .addInterceptor(new RedditMediaUndeleteInterceptor())
                 .addInterceptor(new RedditSubredditUndeleteInterceptor())
                 .addInterceptor(new RedditSubmissionUndeleteInterceptor())
                 .addNetworkInterceptor(new WaybackThrottlingInterceptor())
