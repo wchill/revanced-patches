@@ -51,9 +51,9 @@ Para traducir nuevos idiomas, visita translate.revanced.app"</string>
   <string name="revanced_pref_import_export_title">Importar / Exportar</string>
   <string name="revanced_pref_import_export_summary">Importar / Exportar ajustes de ReVanced</string>
   <!-- Settings about dialog. -->
-  <string name="revanced_settings_about_links_body">Estás usando la versión de ReVanced Patches &lt;i&gt;%s&lt;/i&gt;</string>
+  <string name="revanced_settings_about_links_body">Estás usando la versión de ReVanced Patches: &lt;i&gt;%s&lt;/i&gt;</string>
   <string name="revanced_settings_about_links_dev_header">Nota</string>
-  <string name="revanced_settings_about_links_dev_body">Esta versión es un pre-lanzamiento y puede que experimentes problemas inesperados</string>
+  <string name="revanced_settings_about_links_dev_body">Esta versión es una pre-versión y puedes experimentar problemas inesperados</string>
   <string name="revanced_settings_about_links_header">Enlaces oficiales</string>
   <!-- NOTE: the about strings above are duplicated in the TikTok about screen code,
                  and changes made here must also be made there. -->
@@ -62,9 +62,16 @@ Para traducir nuevos idiomas, visita translate.revanced.app"</string>
   <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
   <string name="gms_core_toast_not_installed_message">MicroG GmsCore no está instalado. Instálala.</string>
   <string name="gms_core_dialog_title">Acción necesaria</string>
-  <string name="gms_core_dialog_not_whitelisted_not_allowed_in_background_message">"MicroG GmsCore no tiene permiso para ejecutarse en segundo plano."</string>
+  <string name="gms_core_dialog_not_whitelisted_not_allowed_in_background_message">"MicroG GmsCore no tiene permiso para ejecutarse en segundo plano.
+
+Sigue la guía \"No cierres mi aplicación\" para su teléfono, y aplica las instrucciones a tu instalación de MicroG
+
+Esto es requerido para el funcionamiento de la APP"</string>
   <string name="gms_core_dialog_open_website_text">Abrir sitio web</string>
-  <string name="gms_core_dialog_not_whitelisted_using_battery_optimizations_message">"La optimización de la batería de MicroG GmsCore debe estar deshabilitada para evitar problemas."</string>
+  <string name="gms_core_dialog_not_whitelisted_using_battery_optimizations_message">"La optimización de la batería de MicroG GmsCore debe estar deshabilitada para evitar problemas.
+
+Desactivar las optimizaciones de batería para MicroG no afectará negativamente el gasto de la batería
+"</string>
   <string name="gms_core_dialog_continue_text">Continuar</string>
   </patch>
   </app>
@@ -216,6 +223,9 @@ Para traducir nuevos idiomas, visita translate.revanced.app"</string>
   <string name="revanced_hide_artist_cards_title">Ocultar tarjetas de artistas</string>
   <string name="revanced_hide_artist_cards_summary_on">Las tarjetas de artistas están ocultas</string>
   <string name="revanced_hide_artist_cards_summary_off">Se muestran las tarjetas del artista</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_title">Ocultar \"Resumen de video generado por IA\"</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_summary_on">La sección de resumen del video está oculta</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_summary_off">La sección de resumen del video se muestra</string>
   <string name="revanced_hide_attributes_section_title">Ocultar atributos</string>
   <string name="revanced_hide_attributes_section_summary_on">Las secciones Lugares destacados, Juegos, Música y Personas mencionadas están ocultas</string>
   <string name="revanced_hide_attributes_section_summary_off">Las secciones Lugares destacados, Juegos, Música y Personas mencionadas se muestran</string>
@@ -252,9 +262,12 @@ Para traducir nuevos idiomas, visita translate.revanced.app"</string>
   <string name="revanced_hide_filter_bar_feed_in_related_videos_summary_off">Mostrar en vídeos relacionados</string>
   <string name="revanced_comments_screen_title">Comentarios</string>
   <string name="revanced_comments_screen_summary">Ocultar o mostrar los componentes de sección de comentarios</string>
-  <string name="revanced_hide_comments_chat_summary_title">Ocultar \"Resumen del chat\"</string>
-  <string name="revanced_hide_comments_chat_summary_summary_on">El resumen del chat está oculto</string>
-  <string name="revanced_hide_comments_chat_summary_summary_off">Se muestra el resumen del chat</string>
+  <string name="revanced_hide_comments_ai_chat_summary_title">Ocultar el resumen del chat de IA</string>
+  <string name="revanced_hide_comments_ai_chat_summary_summary_on">El resumen del chat está oculto</string>
+  <string name="revanced_hide_comments_ai_chat_summary_summary_off">El resumen del chat se muestra</string>
+  <string name="revanced_hide_comments_ai_summary_title">Ocultar el resumen de los comentarios de la IA</string>
+  <string name="revanced_hide_comments_ai_summary_summary_on">El resumen de los comentarios está oculto</string>
+  <string name="revanced_hide_comments_ai_summary_summary_off">El resumen de los comentarios se muestra</string>
   <string name="revanced_hide_comments_by_members_header_title">Ocultar encabezado \'Comentarios por miembros\'</string>
   <string name="revanced_hide_comments_by_members_header_summary_on">El encabezado Comentarios de los miembros está oculto</string>
   <string name="revanced_hide_comments_by_members_header_summary_off">Se muestra el encabezado Comentarios de los miembros</string>
@@ -301,7 +314,7 @@ Si un doodle se está mostrando actualmente en tu región y este ajuste de ocult
   <string name="revanced_hide_keyword_content_subscriptions_summary_on">Los videos en la pestaña de suscripciones son filtrados por palabras clave</string>
   <string name="revanced_hide_keyword_content_subscriptions_summary_off">Los videos en la pestaña de suscripciones no son filtrados por palabras clave</string>
   <string name="revanced_hide_keyword_content_phrases_title">Palabras clave a ocultar</string>
-  <!-- For localization it is preferred, but not required, if 'LeBlanc' is replaced with a localized name or a familiar word that has upper case letters in the middle of the word.
+  <!-- For localization, it is preferred, but not required, if 'LeBlanc' is replaced with a localized name or a familiar word that has upper case letters in the middle of the word.
                  This is because keywords can be in any language, and showing an example in the localized script helps convey this. -->
   <string name="revanced_hide_keyword_content_phrases_summary">"Las palabras y frases que se ocultan, separadas por nuevas líneas
 
@@ -316,7 +329,7 @@ Limitaciones
 • Es posible que algunos componentes de la interfaz de usuario no estén ocultos
 • La búsqueda de una palabra clave puede no mostrar ningún resultado"</string>
   <string name="revanced_hide_keyword_content_about_whole_words_title">Coincidir palabras completas</string>
-  <!-- Translations _must_ use a localized example.  For languages that do not use spaces between words (Chinese, Japanese, etc) the English AI example should be used since no localized examples exist.  Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
+  <!-- Translations _must_ use a localized example.  For languages that do not use spaces between words (Chinese, Japanese, etc.) the English AI example should be used since no localized examples exist.  Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
   <string name="revanced_hide_keyword_content_about_whole_words_summary">Rodear una palabra clave/frase con comillas dobles evitará las coincidencias parciales de títulos de vídeo y nombres de canales&lt;br&gt;&lt;br&gt;Por ejemplo,&lt;br&gt;&lt;b&gt;\"ai\"&lt;/b&gt; ocultará el vídeo: &lt;b&gt;¿Cómo funciona la AI?&lt;/b&gt;&lt;br&gt;pero no ocultará: &lt;b&gt;¿Quieres aprender a bailar?&lt;/b&gt;</string>
   <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
   <string name="revanced_hide_keyword_toast_invalid_common">No se puede usar la palabra clave: %s</string>
@@ -414,9 +427,9 @@ Esta función solo está disponible para dispositivos antiguos"</string>
   <string name="revanced_disable_precise_seeking_gesture_summary_off">Gesto habilitado</string>
   </patch>
   <patch id="interaction.seekbar.enableSeekbarTappingPatch">
-  <string name="revanced_seekbar_tapping_title">Habilitar toque en la barra de búsqueda</string>
-  <string name="revanced_seekbar_tapping_summary_on">Toque de barra de búsqueda está habilitado</string>
-  <string name="revanced_seekbar_tapping_summary_off">Toque de barra de búsqueda está desactivado</string>
+  <string name="revanced_seekbar_tapping_title">Habilitar tocar para buscar</string>
+  <string name="revanced_seekbar_tapping_summary_on">Tocar para buscar está activado</string>
+  <string name="revanced_seekbar_tapping_summary_off">Tocar para buscar está desactivado</string>
   </patch>
   <patch id="interaction.swipecontrols.swipeControlsResourcePatch">
   <string name="revanced_swipe_brightness_title">Activar gesto de brillo</string>
@@ -430,7 +443,7 @@ Ajusta el brillo deslizando verticalmente en el lado izquierdo de la pantalla"</
 Ajusta el volumen deslizando verticalmente en el lado derecho de la pantalla"</string>
   <string name="revanced_swipe_volume_summary_off">Deslizar volumen está desactivado</string>
   <string name="revanced_swipe_press_to_engage_title">Activar gesto de pulsar para deslizar</string>
-  <string name="revanced_swipe_press_to_engage_summary_on">Pulsar para deslizar está habilitado</string>
+  <string name="revanced_swipe_press_to_engage_summary_on">Pulsar para deslizar está activado</string>
   <string name="revanced_swipe_press_to_engage_summary_off">Pulsar para deslizar está desactivado</string>
   <string name="revanced_swipe_haptic_feedback_title">Activar respuesta háptica</string>
   <string name="revanced_swipe_haptic_feedback_summary_on">Comentarios hápticos habilitados</string>
@@ -539,6 +552,7 @@ Si cambiar este ajuste no tiene efecto, intenta cambiar al modo incógnito."</st
   <string name="revanced_disable_translucent_status_bar_title">Desactivar la barra de estado translúcida</string>
   <string name="revanced_disable_translucent_status_bar_summary_on">La barra de estado es opaca</string>
   <string name="revanced_disable_translucent_status_bar_summary_off">La barra de estado es opaca o translúcida</string>
+  <string name="revanced_disable_translucent_status_bar_user_dialog_message">En algunos dispositivos, habilitar esta función puede cambiar la barra de navegación del sistema a transparente.</string>
   <string name="revanced_disable_translucent_navigation_bar_light_title">Desactivar la barra translúcida clara</string>
   <string name="revanced_disable_translucent_navigation_bar_light_summary_on">La barra de navegación en modo claro es opaca</string>
   <string name="revanced_disable_translucent_navigation_bar_light_summary_off">La barra de navegación del modo claro es opaca o translúcida</string>
@@ -1080,11 +1094,11 @@ Si se desactiva posteriormente, se recomienda borrar los datos de la aplicación
   <string name="revanced_change_start_page_entry_courses">Cursos / Aprendizaje</string>
   <string name="revanced_change_start_page_entry_explore">Explorar</string>
   <string name="revanced_change_start_page_entry_fashion">Moda y Belleza</string>
-  <string name="revanced_change_start_page_entry_gaming">Juego</string>
+  <string name="revanced_change_start_page_entry_gaming">Gaming</string>
   <string name="revanced_change_start_page_entry_history">Historial</string>
   <string name="revanced_change_start_page_entry_library">Biblioteca</string>
-  <string name="revanced_change_start_page_entry_liked_videos">Vídeos gustados</string>
-  <string name="revanced_change_start_page_entry_live">Vivo</string>
+  <string name="revanced_change_start_page_entry_liked_videos">Vídeos que me gustan</string>
+  <string name="revanced_change_start_page_entry_live">En directo</string>
   <string name="revanced_change_start_page_entry_movies">Películas</string>
   <string name="revanced_change_start_page_entry_music">Música</string>
   <string name="revanced_change_start_page_entry_news">Noticias</string>
@@ -1121,7 +1135,7 @@ Si se desactiva posteriormente, se recomienda borrar los datos de la aplicación
   <patch id="layout.miniplayer.miniplayerPatch">
   <string name="revanced_miniplayer_screen_title">Minireproductor</string>
   <string name="revanced_miniplayer_screen_summary">Cambiar el estilo del reproductor minimizado en la aplicación</string>
-  <string name="revanced_miniplayer_type_title">Tipo de minreproductor</string>
+  <string name="revanced_miniplayer_type_title">Tipo de minireproductor</string>
   <string name="revanced_miniplayer_type_entry_0">Desactivado</string>
   <string name="revanced_miniplayer_type_entry_1">Predeterminado</string>
   <string name="revanced_miniplayer_type_entry_2">Mínimo</string>
@@ -1129,6 +1143,7 @@ Si se desactiva posteriormente, se recomienda borrar los datos de la aplicación
   <string name="revanced_miniplayer_type_entry_4">Moderna 1</string>
   <string name="revanced_miniplayer_type_entry_5">Moderna 2</string>
   <string name="revanced_miniplayer_type_entry_6">Moderna 3</string>
+  <string name="revanced_miniplayer_type_entry_7">Moderno 4</string>
   <string name="revanced_miniplayer_rounded_corners_title">Habilitar esquinas redondeadas</string>
   <string name="revanced_miniplayer_rounded_corners_summary_on">Las esquinas están redondeadas</string>
   <string name="revanced_miniplayer_rounded_corners_summary_off">Las esquinas son cuadradas</string>
@@ -1148,14 +1163,14 @@ El minireproductor se puede arrastrar a cualquier esquina de la pantalla"</strin
 
 El minireproductor se puede arrastrar fuera de la pantalla hacia la izquierda o la derecha"</string>
   <string name="revanced_miniplayer_horizontal_drag_summary_off">Gesto de arrastre horizontal desactivado</string>
-  <string name="revanced_miniplayer_hide_expand_close_title">Ocultar botón de cerrar</string>
-  <string name="revanced_miniplayer_hide_expand_close_summary_on">El botón de cierre está oculto</string>
-  <string name="revanced_miniplayer_hide_expand_close_summary_off">Se muestra el botón de cerrar</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_title">Ocultar botones de expansión y cierre</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_summary_on">"Los botones están ocultos
+  <string name="revanced_miniplayer_hide_overlay_buttons_title">Ocultar botones de superposición</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_summary_on">Los botones de superposición están ocultos</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_summary_off">Se muestran los botones de superposición</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_title">Ocultar botones de expandir y cerrar</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_summary_on">"Los botones están ocultos
 
-Desliza para expandir o cerrar"</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_summary_off">Mostrar los botones de ampliación y cierre</string>
+Desliza el dedo para expandir o cerrar"</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_summary_off">Se muestran los botones de expandir y cerrar</string>
   <string name="revanced_miniplayer_hide_subtext_title">Ocultar subtextos</string>
   <string name="revanced_miniplayer_hide_subtext_summary_on">Los subtextos están ocultos</string>
   <string name="revanced_miniplayer_hide_subtext_summary_off">Los subtextos se muestran</string>

@@ -226,6 +226,9 @@ Second \"item\" text"</string>
   <string name="revanced_hide_artist_cards_title">إخفاء بطاقات الفنان</string>
   <string name="revanced_hide_artist_cards_summary_on">تم إخفاء بطاقات الفنان</string>
   <string name="revanced_hide_artist_cards_summary_off">يتم عرض بطاقات الفنان</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_title">إخفاء \"ملخص الفيديو الذي تم إنشاؤه بواسطة الذكاء الاصطناعي\"</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_summary_on">تم إخفاء قسم ملخص الفيديو</string>
+  <string name="revanced_hide_ai_generated_video_summary_section_summary_off">يتم عرض قسم ملخص الفيديو</string>
   <string name="revanced_hide_attributes_section_title">إخفاء الصفات</string>
   <string name="revanced_hide_attributes_section_summary_on">تم إخفاء أقسام الأماكن المميزة، الألعاب، الموسيقى والأشخاص المذكورون</string>
   <string name="revanced_hide_attributes_section_summary_off">يتم عرض أقسام الأماكن المميزة، الألعاب، الموسيقى والأشخاص المذكورون</string>
@@ -262,9 +265,12 @@ Second \"item\" text"</string>
   <string name="revanced_hide_filter_bar_feed_in_related_videos_summary_off">يعرض في الفيديوهات ذات الصلة</string>
   <string name="revanced_comments_screen_title">التعليقات</string>
   <string name="revanced_comments_screen_summary">إخفاء أو عرض مكونات قسم التعليقات</string>
-  <string name="revanced_hide_comments_chat_summary_title">إخفاء \'ملخص المحادثة\'</string>
-  <string name="revanced_hide_comments_chat_summary_summary_on">تم إخفاء ملخص المحادثات</string>
-  <string name="revanced_hide_comments_chat_summary_summary_off">يتم عرض ملخص المحادثات</string>
+  <string name="revanced_hide_comments_ai_chat_summary_title">إخفاء ملخص دردشة الذكاء الاصطناعي</string>
+  <string name="revanced_hide_comments_ai_chat_summary_summary_on">تم إخفاء ملخص المحادثات</string>
+  <string name="revanced_hide_comments_ai_chat_summary_summary_off">يتم عرض ملخص المحادثات</string>
+  <string name="revanced_hide_comments_ai_summary_title">إخفاء ملخص تعليقات الذكاء الاصطناعي</string>
+  <string name="revanced_hide_comments_ai_summary_summary_on">ملخص التعليقات مخفي</string>
+  <string name="revanced_hide_comments_ai_summary_summary_off">ملخص التعليقات معروض</string>
   <string name="revanced_hide_comments_by_members_header_title">إخفاء رأس \'تعليقات الأعضاء\'</string>
   <string name="revanced_hide_comments_by_members_header_summary_on">تم إخفاء علامة تعليقات من الأعضاء</string>
   <string name="revanced_hide_comments_by_members_header_summary_off">يتم عرض علامة تعليقات من الأعضاء</string>
@@ -311,7 +317,7 @@ Second \"item\" text"</string>
   <string name="revanced_hide_keyword_content_subscriptions_summary_on">يتم تصفية الفيديوهات في علامة التبويب الاشتراكات حسب الكلمات المفتاحية</string>
   <string name="revanced_hide_keyword_content_subscriptions_summary_off">لا يتم تصفية الفيديوهات في علامة التبويب الاشتراكات حسب الكلمات المفتاحية</string>
   <string name="revanced_hide_keyword_content_phrases_title">الكلمات المفتاحية المراد إخفاؤها</string>
-  <!-- For localization it is preferred, but not required, if 'LeBlanc' is replaced with a localized name or a familiar word that has upper case letters in the middle of the word.
+  <!-- For localization, it is preferred, but not required, if 'LeBlanc' is replaced with a localized name or a familiar word that has upper case letters in the middle of the word.
                  This is because keywords can be in any language, and showing an example in the localized script helps convey this. -->
   <string name="revanced_hide_keyword_content_phrases_summary">"الكلمات والعبارات التي تريد إخفاءها، مفصولة بسطور جديدة
 
@@ -326,7 +332,7 @@ Second \"item\" text"</string>
 • قد لا يتم إخفاء بعض مكونات واجهة المستخدم
 • البحث عن كلمة ما قد لا يعطي نتائج"</string>
   <string name="revanced_hide_keyword_content_about_whole_words_title">مطابقة الكلمات بأكملها</string>
-  <!-- Translations _must_ use a localized example.  For languages that do not use spaces between words (Chinese, Japanese, etc) the English AI example should be used since no localized examples exist.  Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
+  <!-- Translations _must_ use a localized example.  For languages that do not use spaces between words (Chinese, Japanese, etc.) the English AI example should be used since no localized examples exist.  Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
   <string name="revanced_hide_keyword_content_about_whole_words_summary">سيؤدي وضع علامة اقتباس مزدوجة حول كلمة رئيسية/عبارة إلى منع التطابقات الجزئية لعناوين الفيديو وأسماء القنوات.&lt;br&gt;&lt;br&gt;على سبيل المثال،&lt;br&gt;&lt;b&gt;\"ai\"&lt;/b&gt; سيخفي الفيديو: &lt;b&gt;How does AI work?&lt;/b&gt;&lt;br&gt;ولكن لن يخفي: &lt;b&gt;What does fair use mean?&lt;/b&gt;</string>
   <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
   <string name="revanced_hide_keyword_toast_invalid_common">لا يمكن استخدام الكلمة الرئيسية: %s</string>
@@ -424,9 +430,9 @@ Second \"item\" text"</string>
   <string name="revanced_disable_precise_seeking_gesture_summary_off">تم تمكين الإيماءة</string>
   </patch>
   <patch id="interaction.seekbar.enableSeekbarTappingPatch">
-  <string name="revanced_seekbar_tapping_title">تمكين النقر على شريط الوقت</string>
-  <string name="revanced_seekbar_tapping_summary_on">تم تمكين النقر على شريط الوقت (شريط تقدم الفيديو)</string>
-  <string name="revanced_seekbar_tapping_summary_off">تم تعطيل النقر على شريط الوقت (شريط تقدم الفيديو)</string>
+  <string name="revanced_seekbar_tapping_title">تمكين النقر للبحث</string>
+  <string name="revanced_seekbar_tapping_summary_on">تم تمكين النقر للتنقل</string>
+  <string name="revanced_seekbar_tapping_summary_off">تم تعطيل النقر للبحث</string>
   </patch>
   <patch id="interaction.swipecontrols.swipeControlsResourcePatch">
   <string name="revanced_swipe_brightness_title">التحكم بالسطوع عن طريق ايماءة التمرير</string>
@@ -439,9 +445,9 @@ Second \"item\" text"</string>
 
 اضبط مستوى الصوت عن طريق التمرير عموديًا على الجانب الأيمن من الشاشة"</string>
   <string name="revanced_swipe_volume_summary_off">تم تعطيل التمرير السريع لضبط مستوى الصوت في وضع ملء الشاشة</string>
-  <string name="revanced_swipe_press_to_engage_title">تمكين إيماءة الضغط للتمرير</string>
-  <string name="revanced_swipe_press_to_engage_summary_on">يتم تنشيط عناصر التحكم عن طريق إيماءة التمرير فقط بضغطة طويلة</string>
-  <string name="revanced_swipe_press_to_engage_summary_off">تنشيط عناصر التحكم عن طريق إيماءة التمرير عند الضغط مباشرة</string>
+  <string name="revanced_swipe_press_to_engage_title">تمكين الضغط على إيماءة التمرير السريع</string>
+  <string name="revanced_swipe_press_to_engage_summary_on">تم تمكين الضغط للتمرير السريع</string>
+  <string name="revanced_swipe_press_to_engage_summary_off">تم تعطيل الضغط للتمرير السريع</string>
   <string name="revanced_swipe_haptic_feedback_title">الاهتزاز عند الضغط</string>
   <string name="revanced_swipe_haptic_feedback_summary_on">تم تمكين الاهتزاز عند الضغط</string>
   <string name="revanced_swipe_haptic_feedback_summary_off">تم تعطيل الاهتزاز عند الضغط</string>
@@ -549,6 +555,7 @@ Second \"item\" text"</string>
   <string name="revanced_disable_translucent_status_bar_title">تعطيل شريط الحالة الشفاف</string>
   <string name="revanced_disable_translucent_status_bar_summary_on">شريط الحالة غير شفاف</string>
   <string name="revanced_disable_translucent_status_bar_summary_off">شريط الحالة معتم أو شفاف</string>
+  <string name="revanced_disable_translucent_status_bar_user_dialog_message">في بعض الأجهزة، قد يؤدي تمكين هذه الميزة إلى تغيير شريط التنقل في النظام إلى شفاف.</string>
   <string name="revanced_disable_translucent_navigation_bar_light_title">تعطيل الشريط الشفاف الفاتح</string>
   <string name="revanced_disable_translucent_navigation_bar_light_summary_on">شريط التنقل في الوضع الفاتح غير شفاف</string>
   <string name="revanced_disable_translucent_navigation_bar_light_summary_off">شريط التنقل في الوضع الفاتح معتم او شفاف</string>
@@ -1148,6 +1155,7 @@ Second \"item\" text"</string>
   <string name="revanced_miniplayer_type_entry_4">حديث 1</string>
   <string name="revanced_miniplayer_type_entry_5">حديث 2</string>
   <string name="revanced_miniplayer_type_entry_6">حديث 3</string>
+  <string name="revanced_miniplayer_type_entry_7">الوضع الحديث 4</string>
   <string name="revanced_miniplayer_rounded_corners_title">تمكين الزوايا المستديرة</string>
   <string name="revanced_miniplayer_rounded_corners_summary_on">الزوايا مستديرة</string>
   <string name="revanced_miniplayer_rounded_corners_summary_off">الزوايا مربعة</string>
@@ -1167,14 +1175,14 @@ Second \"item\" text"</string>
 
 يمكن سحب المشغل المصغر خارج الشاشة إلى اليسار أو اليمين"</string>
   <string name="revanced_miniplayer_horizontal_drag_summary_off">تم تعطيل إيماءة السحب الأفقية</string>
-  <string name="revanced_miniplayer_hide_expand_close_title">إخفاء زر الإغلاق</string>
-  <string name="revanced_miniplayer_hide_expand_close_summary_on">تم إخفاء زر الإغلاق</string>
-  <string name="revanced_miniplayer_hide_expand_close_summary_off">يتم عرض زر الإغلاق</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_title">إخفاء أزرار التوسيع والإغلاق</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_summary_on">"تم إخفاء الأزرار
+  <string name="revanced_miniplayer_hide_overlay_buttons_title">إخفاء أزرار التراكب</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_summary_on">أزرار التراكب مخفية</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_summary_off">أزرار التراكب ظاهرة</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_title">إخفاء زري التوسيع والإغلاق</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_summary_on">"الأزرار مخفية
 
-مرر للتوسيع أو الإغلاق"</string>
-  <string name="revanced_miniplayer_hide_expand_close_legacy_summary_off">يتم عرض أزرار التوسيع والإغلاق</string>
+اسحب للتوسيع أو الإغلاق"</string>
+  <string name="revanced_miniplayer_hide_overlay_buttons_legacy_summary_off">زرا التوسيع والإغلاق ظاهران</string>
   <string name="revanced_miniplayer_hide_subtext_title">إخفاء النصوص الفرعية</string>
   <string name="revanced_miniplayer_hide_subtext_summary_on">تم إخفاء النصوص الفرعية</string>
   <string name="revanced_miniplayer_hide_subtext_summary_off">يتم عرض النصوص الفرعية</string>
