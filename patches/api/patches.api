@@ -457,11 +457,12 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/misc
 	public static final fun getSharedExtensionPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
-public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/UndeleteSubmissionsPatchKt {
-	public static final field EXTENSION_CLASS_DESCRIPTOR Ljava/lang/String;
-	public static final field EXTRA_EMOJI_CONTEXT_KEY Ljava/lang/String;
-	public static final field EXTRA_EMOJI_GETTER Ljava/lang/String;
-	public static final fun getUndeletePostsPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
+public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/InterceptHttpRequestsKt {
+	public static final fun getInterceptHttpRequests ()Lapp/revanced/patcher/patch/BytecodePatch;
+}
+
+public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/reddit/UndeleteRedditPatchKt {
+	public static final fun getUndeleteRedditPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
 public final class app/revanced/patches/reddit/customclients/infinityforreddit/api/SpoofClientPatchKt {
