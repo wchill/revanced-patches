@@ -10,10 +10,10 @@ import java.util.Optional;
 import app.revanced.extension.boostforreddit.http.HttpUtils;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackMachine;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackResponse;
-import app.revanced.extension.shared.Logger;
 import okhttp3.Interceptor;
 import okhttp3.Response;
 import okhttp3.Request;
+
 
 public class RedditMediaUndeleteInterceptor implements Interceptor {
 
@@ -27,7 +27,6 @@ public class RedditMediaUndeleteInterceptor implements Interceptor {
         if (host.contains("i.redd.it") || host.contains("preview.redd.it")) {
             contentUrl = request.url().toString();
         } else if (request.url().toString().contains("reddit.com/gallery/")) {
-            Logger.printInfo(() -> request.url().toString());
             return chain.proceed(request);
         } else {
             return chain.proceed(request);

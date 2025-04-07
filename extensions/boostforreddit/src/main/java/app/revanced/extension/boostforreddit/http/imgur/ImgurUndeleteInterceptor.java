@@ -16,6 +16,7 @@ import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
 import app.revanced.extension.boostforreddit.http.AutoSavingCache;
@@ -41,7 +42,6 @@ public class ImgurUndeleteInterceptor implements Interceptor {
         }
 
         try {
-            Logger.printInfo(() -> "Handling " + request.url().toString());
             if (host.contains("api.")) {
                 // handle all the albums
                 return handleApiCall(chain);
