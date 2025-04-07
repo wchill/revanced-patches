@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete
+package app.revanced.patches.reddit.customclients.boostforreddit.undelete.reddit
 
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
@@ -11,54 +11,49 @@ import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMu
 import app.revanced.patcher.util.smali.ExternalLabel
 import app.revanced.patcher.util.smali.toInstructions
 import app.revanced.patches.reddit.customclients.boostforreddit.misc.extension.sharedExtensionPatch
+import app.revanced.patches.reddit.customclients.boostforreddit.undelete.interceptHttpRequests
 import app.revanced.util.addInstructionsAtControlFlowLabel
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstruction
-import app.revanced.util.indexOfFirstInstructionOrThrow
 import app.revanced.util.indexOfFirstInstructionReversed
-import app.revanced.util.indexOfFirstLiteralInstruction
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10t
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
-import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
-const val EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/boostforreddit/UndeleteSubmissionsPatch;"
-const val EXTRA_EMOJI_CONTEXT_KEY = "extraEmoji"
-const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
+
+internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/boostforreddit/http/OkHttpRequestHook;"
+internal const val EXTRA_EMOJI_CONTEXT_KEY = "extraEmoji"
+internal const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
 
 @Suppress("unused")
-val undeletePostsPatch = bytecodePatch(
-    name="Automatically undelete removed posts"
+val undeleteRedditPatch = bytecodePatch(
+    name="Automatically undelete Reddit content"
 ) {
-    dependsOn(sharedExtensionPatch)
+    dependsOn(sharedExtensionPatch, interceptHttpRequests)
     compatibleWith("com.rubenmayayo.reddit")
 
     execute {
-        // region getSubmission handler.
-        getSubmissionFingerprint.method.apply {
-            val submissionRegister = "p1"
-
-            val returnIndex = indexOfFirstInstructionReversed(Opcode.RETURN_OBJECT)
+        installJrawInterceptorFingerprint.method.apply {
+            val index = indexOfFirstInstructionReversed(Opcode.INVOKE_VIRTUAL)
             addInstructions(
-                returnIndex,
+                index,
                 """
-                    invoke-static { $submissionRegister }, $EXTENSION_CLASS_DESCRIPTOR->getSubmission(Lnet/dean/jraw/models/Submission;)Lnet/dean/jraw/models/Submission;
-                    move-result-object $submissionRegister
-                """,
+                invoke-static       { v0 }, $OKHTTP_EXTENSION_CLASS_DESCRIPTOR->installInterceptor(Lokhttp3/OkHttpClient${'$'}Builder;)Lokhttp3/OkHttpClient${'$'}Builder;
+                move-result-object  v0
+                """
             )
         }
-        // endregion
 
         // region Add additional field and marshaling code for ContributionModel.
         val fieldType = "Ljava/lang/String;"
         contributionModelConstructorFingerprint.classDef.apply {
-            fields.add(ImmutableField(
+            fields.add(
+                ImmutableField(
                 type,
                 EXTRA_EMOJI_CONTEXT_KEY,
                 fieldType,
@@ -67,7 +62,8 @@ val undeletePostsPatch = bytecodePatch(
                 null,
                 null,
             ).toMutable())
-            methods.add(ImmutableMethod(
+            methods.add(
+                ImmutableMethod(
                 type,
                 EXTRA_EMOJI_GETTER,
                 emptyList(),
@@ -162,21 +158,11 @@ val undeletePostsPatch = bytecodePatch(
             )
         }
         setSubmissionBabushkaTextFingerprint.method.apply {
-            // iget-object         p1, p0, Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;->infoTop:Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;
-            // invoke-virtual      {p1}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;->o()V
-
             var babushkaTextLoadIndex = indexOfFirstInstruction {
                 val methodReference = getReference<MethodReference>()
                 opcode == Opcode.INVOKE_VIRTUAL && methodReference?.definingClass == "Lcom/rubenmayayo/reddit/models/reddit/PublicContributionModel;" && methodReference.name == "x"
             }
-            /*
-            print(babushkaTextLoadIndex)
-            babushkaTextLoadIndex = indexOfFirstInstructionOrThrow {
-                getReference<StringReference>()?.contains("\uD83D\uDD12") == true
-            } - 8
-            print(babushkaTextLoadIndex)
 
-             */
             addInstructionsAtControlFlowLabel(
                 babushkaTextLoadIndex,
                 """
@@ -199,6 +185,74 @@ val undeletePostsPatch = bytecodePatch(
             )
         }
 
+        // endregion
+
+        // region Fix the deletion reason detection
+        stateSubmissionViewGetHeaderFingerprint.method.let {
+            stateSubmissionViewGetHeaderFingerprint.stringMatches!!.forEach { match ->
+                if (match.string == "copyright_takedown") {
+                    it.addInstructionsAtControlFlowLabel(
+                        match.index,
+                        """
+                        const               v1, 0x7F130594
+                        """
+                    )
+                } else {
+                    it.addInstructionsWithLabels(
+                        match.index,
+                        """
+                        const-string        v0, "content_takedown"
+                        invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                        move-result         v0
+                        if-eqz              v0, :continue
+                        const               p1, 0x7F130590
+                        return              p1
+                        """,
+                        ExternalLabel("continue", it.getInstruction(match.index))
+                    )
+                }
+            }
+        }
+        stateSubmissionViewGetSummaryFingerprint.method.let {
+            stateSubmissionViewGetSummaryFingerprint.stringMatches!!.forEach { match ->
+                if (match.string == "copyright_takedown") {
+                    it.addInstructionsAtControlFlowLabel(
+                        match.index,
+                        """
+                        const               v1, 0x7f130595
+                        """
+                    )
+                } else {
+                    it.addInstructionsWithLabels(
+                        match.index,
+                        """
+                        const-string        v0, "content_takedown"
+                        invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                        move-result         v0
+                        if-eqz              v0, :continue
+                        const               p1, 0x7F130591
+                        return              p1
+                        """,
+                        ExternalLabel("continue", it.getInstruction(match.index))
+                    )
+                }
+            }
+        }
+        stateSubmissionViewHasValidRemovalReasonFingerprint.method.let {
+            stateSubmissionViewGetSummaryFingerprint.stringMatches!!.forEach { match ->
+                val index = it.indexOfFirstInstructionReversed(Opcode.CONST_4)
+                it.addInstructionsWithLabels(
+                    match.index,
+                    """
+                    const-string        v0, "content_takedown"
+                    invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result         v0
+                    if-nez              v0, :matched
+                    """,
+                    ExternalLabel("matched", it.getInstruction(index))
+                )
+            }
+        }
         // endregion
     }
 }

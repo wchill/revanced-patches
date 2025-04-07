@@ -4,11 +4,12 @@ import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patches.reddit.customclients.boostforreddit.misc.extension.sharedExtensionPatch
 
-const val EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/boostforreddit/ExceptionHook;"
+const val EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/boostforreddit/debug/ExceptionHook;"
 
 @Suppress("unused")
 val hookExceptionHandler = bytecodePatch(
     name="Hook exception handler",
+    description = "Hook the exception handler in Boost. Don't enable except for development purposes",
     use=false
 ) {
     dependsOn(sharedExtensionPatch)
