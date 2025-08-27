@@ -8,7 +8,7 @@ import app.revanced.extension.shared.Logger;
 
 public class LoggingUtils {
     public static LoggingMode getLoggingMode() {
-        return LoggingMode.ON_FAIL;
+        return LoggingMode.ALWAYS;
     }
 
     private static boolean shouldLog(boolean success) {
