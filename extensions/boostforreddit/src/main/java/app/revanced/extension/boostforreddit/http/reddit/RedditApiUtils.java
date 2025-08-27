@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+
+import net.dean.jraw.models.Listing;
+import net.dean.jraw.models.RedditObject;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +18,7 @@ import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
 import app.revanced.extension.boostforreddit.utils.Emojis;
 
 public class RedditApiUtils {
-    public static EditableObjectNode createListing(List<? extends JsonNode> children) {
+    public static ObjectNode createListing(List<? extends JsonNode> children) {
         ArrayNode childrenNode = new ArrayNode(JsonNodeFactory.instance);
         for (JsonNode child : children) {
             childrenNode.add(child);
@@ -55,19 +59,19 @@ public class RedditApiUtils {
         return isRemovedByAdmins(content) || isRemovedByAntiSpam(content) || isRemovedByAntiEvilOps(content) || isRemovedByMod(content) || isDeletedByUser(content);
     }
 
-    public static void setRemovalEmoji(EditableObjectNode originalNode) {
+    public static void setRemovalEmoji(ObjectNode originalNode) {
         if (isRemovedByAdmins(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.POLICE_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.POLICE_EMOJI));
         } else if (isRemovedByAntiSpam(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.ROBOT_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.ROBOT_EMOJI));
         } else if (isRemovedByAntiEvilOps(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.DEVIL_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.DEVIL_EMOJI));
         } else if (isRemovedByCopyrightTakedown(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.COPYRIGHT_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.COPYRIGHT_EMOJI));
         } else if (isRemovedByMod(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.BROOM_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.BROOM_EMOJI));
         } else if (isDeletedByUser(originalNode)) {
-            originalNode.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.TRASH_CAN_EMOJI));
+            originalNode.replace(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.TRASH_CAN_EMOJI));
         }
     }
 

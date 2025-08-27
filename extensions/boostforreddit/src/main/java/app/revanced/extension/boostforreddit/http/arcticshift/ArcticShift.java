@@ -2,6 +2,7 @@ package app.revanced.extension.boostforreddit.http.arcticshift;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import app.revanced.extension.boostforreddit.http.HttpUtils;
 import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
+import app.revanced.extension.boostforreddit.utils.LoggingUtils;
 import app.revanced.extension.boostforreddit.utils.MarkdownRenderer;
 
 public class ArcticShift {
@@ -28,23 +30,28 @@ public class ArcticShift {
     };
 
     private static final String[] COMMENTS_FIELDS = {
-            "id", "author", "author_fullname", "author_flair_text", "body"
+            "id", "author", "author_fullname", "author_flair_text", "body", "link_id"
     };
 
-    public static JsonNode getIds(SubmissionType submissionType, Iterable<String> ids) throws IOException {
-        String url = ARCTIC_SHIFT_BASE_URL + submissionType.toString().toLowerCase() + "/ids?ids=" + String.join(",", ids);
+    private static JsonNode makeApiCall(String url) throws IOException {
+        LoggingUtils.logInfo(true, () -> String.format("Arctic Shift: %s", url));
         return HttpUtils.getJson(url);
+    }
+
+    public static ArrayNode getIds(SubmissionType submissionType, Iterable<String> ids) throws IOException {
+        String url = ARCTIC_SHIFT_BASE_URL + submissionType.toString().toLowerCase() + "/ids?ids=" + String.join(",", ids);
+        return (ArrayNode) makeApiCall(url).get("data");
     }
 
     public static ArrayNode getCommentTree(String linkId) throws IOException {
         //return queryArcticShiftForCommentTree(id, null, null, null, null);
         String url = ARCTIC_SHIFT_BASE_URL + "comments/tree?limit=25000&link_id=" + linkId;
-        return (ArrayNode) HttpUtils.getJson(url).get("data");
+        return (ArrayNode) makeApiCall(url).get("data");
     }
 
     public static JsonNode getSubredditInfoById(String id) throws IOException {
         String url = ARCTIC_SHIFT_BASE_URL + "subreddits/ids?ids=" + id;
-        JsonNode data = HttpUtils.getJson(url);
+        JsonNode data = makeApiCall(url);
         return new EditableObjectNode(
                 Map.of(
                         "kind", new TextNode("t5"),
@@ -75,18 +82,18 @@ public class ArcticShift {
             url += "&before=" + after;
         }
 
-        return (ArrayNode) HttpUtils.getJson(url).get("data");
+        return (ArrayNode) makeApiCall(url).get("data");
     }
 
-    public static void updateSubmissionNode(EditableObjectNode oldNode, JsonNode newNode) {
+    public static void updateSubmissionNode(ObjectNode oldNode, JsonNode newNode) {
         mergeJsonNodes(oldNode, newNode, POSTS_FIELDS, "selftext");
     }
 
-    public static void updateCommentNode(EditableObjectNode oldNode, JsonNode newNode) {
+    public static void updateCommentNode(ObjectNode oldNode, JsonNode newNode) {
         mergeJsonNodes(oldNode, newNode, COMMENTS_FIELDS, "body");
     }
 
-    private static void mergeJsonNodes(EditableObjectNode oldNode, JsonNode newNode, String[] fields, String markdownField) {
+    private static void mergeJsonNodes(ObjectNode oldNode, JsonNode newNode, String[] fields, String markdownField) {
         if (oldNode == null) {
             throw new IllegalArgumentException("oldNode must not be null");
         }
@@ -95,17 +102,17 @@ public class ArcticShift {
             for (Iterator<String> it = newNode.fieldNames(); it.hasNext(); ) {
                 String fieldName = it.next();
                 if (oldNode.get(fieldName) == null) {
-                    oldNode.set(fieldName, newNode.get(fieldName));
+                    oldNode.replace(fieldName, newNode.get(fieldName));
                 }
             }
 
             for (String fieldName : fields) {
                 JsonNode node = newNode.get(fieldName);
                 if (node != null) {
-                    oldNode.set(fieldName, node);
+                    oldNode.replace(fieldName, node);
                     if (fieldName.equals(markdownField)) {
                         String renderedHtml = MarkdownRenderer.render(node.asText());
-                        oldNode.set(markdownField + "_html", new TextNode(renderedHtml));
+                        oldNode.replace(markdownField + "_html", new TextNode(renderedHtml));
                     }
                 }
             }

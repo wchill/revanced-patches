@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import org.jetbrains.annotations.NotNull;
@@ -157,10 +158,10 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
             }
         }
 
-        EditableObjectNode listing = RedditApiUtils.createListing(children);
-        EditableObjectNode listingData = (EditableObjectNode) listing.get("data");
-        listingData.set("after", new TextNode(convertUnixTimestamp(earliestTimestamp)));
-        listingData.set("before", new TextNode(convertUnixTimestamp(latestTimestamp)));
+        ObjectNode listing = RedditApiUtils.createListing(children);
+        ObjectNode listingData = (ObjectNode) listing.get("data");
+        listingData.replace("after", new TextNode(convertUnixTimestamp(earliestTimestamp)));
+        listingData.replace("before", new TextNode(convertUnixTimestamp(latestTimestamp)));
         return HttpUtils.makeJsonResponse(request, listing);
     }
 
