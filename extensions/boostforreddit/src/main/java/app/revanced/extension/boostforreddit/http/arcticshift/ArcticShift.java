@@ -38,7 +38,7 @@ public class ArcticShift {
 
     public static ArrayNode getCommentTree(String linkId) throws IOException {
         //return queryArcticShiftForCommentTree(id, null, null, null, null);
-        String url = ARCTIC_SHIFT_BASE_URL + "comments/tree?limit=30000&link_id=" + linkId;
+        String url = ARCTIC_SHIFT_BASE_URL + "comments/tree?limit=25000&link_id=" + linkId;
         return (ArrayNode) HttpUtils.getJson(url).get("data");
     }
 
