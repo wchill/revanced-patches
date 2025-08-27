@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete.reddit
+package app.revanced.patches.reddit.customclients.boostforreddit.http.reddit
 
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
@@ -11,7 +11,7 @@ import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMu
 import app.revanced.patcher.util.smali.ExternalLabel
 import app.revanced.patcher.util.smali.toInstructions
 import app.revanced.patches.reddit.customclients.boostforreddit.misc.extension.sharedExtensionPatch
-import app.revanced.patches.reddit.customclients.boostforreddit.undelete.interceptHttpRequests
+import app.revanced.patches.reddit.customclients.boostforreddit.http.interceptHttpRequests
 import app.revanced.util.addInstructionsAtControlFlowLabel
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstruction
@@ -24,8 +24,6 @@ import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
-import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
-import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
 
 internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/boostforreddit/http/OkHttpRequestHook;"

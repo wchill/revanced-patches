@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete.imgur
+package app.revanced.patches.reddit.customclients.boostforreddit.http.imgur
 
 import app.revanced.patcher.fingerprint
 

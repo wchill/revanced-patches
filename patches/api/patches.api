@@ -681,24 +681,24 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/fix/
 	public static final fun getFixSlinksPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
-public final class app/revanced/patches/reddit/customclients/boostforreddit/misc/extension/SharedExtensionPatchKt {
-	public static final fun getSharedExtensionPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
-}
-
-public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/InterceptHttpRequestsKt {
+public final class app/revanced/patches/reddit/customclients/boostforreddit/http/InterceptHttpRequestsKt {
 	public static final fun getInterceptHttpRequests ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
-public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/archive/AddArchiveLinksPatchKt {
+public final class app/revanced/patches/reddit/customclients/boostforreddit/http/archive/AddArchiveLinksPatchKt {
 	public static final fun getAddArchiveLinks ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
-public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/imgur/UndeleteImgurPatchKt {
+public final class app/revanced/patches/reddit/customclients/boostforreddit/http/imgur/UndeleteImgurPatchKt {
 	public static final fun getInterceptImgurRequests ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
-public final class app/revanced/patches/reddit/customclients/boostforreddit/undelete/reddit/UndeleteRedditPatchKt {
+public final class app/revanced/patches/reddit/customclients/boostforreddit/http/reddit/UndeleteRedditPatchKt {
 	public static final fun getUndeleteRedditPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
+}
+
+public final class app/revanced/patches/reddit/customclients/boostforreddit/misc/extension/SharedExtensionPatchKt {
+	public static final fun getSharedExtensionPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
 public final class app/revanced/patches/reddit/customclients/infinityforreddit/api/SpoofClientPatchKt {

@@ -1,10 +1,6 @@
 package app.revanced.extension.boostforreddit.http.reddit;
 
-import android.text.Editable;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -14,21 +10,16 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import net.dean.jraw.models.Comment;
-import net.dean.jraw.models.Listing;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import app.revanced.extension.boostforreddit.utils.CacheUtils;
 import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
 import app.revanced.extension.boostforreddit.utils.LoggingUtils;
 import app.revanced.extension.boostforreddit.utils.MarkdownRenderer;
@@ -38,7 +29,6 @@ import app.revanced.extension.boostforreddit.http.HttpUtils;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackMachine;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackResponse;
 import app.revanced.extension.boostforreddit.utils.Emojis;
-import app.revanced.extension.shared.Logger;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;

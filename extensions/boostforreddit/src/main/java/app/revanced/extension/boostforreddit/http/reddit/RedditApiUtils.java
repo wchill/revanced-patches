@@ -7,9 +7,6 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import net.dean.jraw.models.Listing;
-import net.dean.jraw.models.RedditObject;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

@@ -1,9 +1,9 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete.imgur
+package app.revanced.patches.reddit.customclients.boostforreddit.http.imgur
 
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patches.reddit.customclients.boostforreddit.misc.extension.sharedExtensionPatch
-import app.revanced.patches.reddit.customclients.boostforreddit.undelete.interceptHttpRequests
+import app.revanced.patches.reddit.customclients.boostforreddit.http.interceptHttpRequests
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
