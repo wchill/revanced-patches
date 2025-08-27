@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete.archive
+package app.revanced.patches.reddit.customclients.boostforreddit.http.archive
 
 import app.revanced.patcher.fingerprint
 import com.android.tools.smali.dexlib2.Opcode

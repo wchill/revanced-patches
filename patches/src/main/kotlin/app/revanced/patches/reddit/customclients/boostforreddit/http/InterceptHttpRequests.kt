@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete
+package app.revanced.patches.reddit.customclients.boostforreddit.http
 
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.patch.bytecodePatch

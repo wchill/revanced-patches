@@ -1,4 +1,4 @@
-package app.revanced.patches.reddit.customclients.boostforreddit.undelete.reddit
+package app.revanced.patches.reddit.customclients.boostforreddit.http.reddit
 
 import app.revanced.patcher.fingerprint
 import com.android.tools.smali.dexlib2.AccessFlags

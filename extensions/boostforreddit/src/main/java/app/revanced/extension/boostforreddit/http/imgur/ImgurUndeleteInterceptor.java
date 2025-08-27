@@ -16,14 +16,12 @@ import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
 import app.revanced.extension.boostforreddit.http.AutoSavingCache;
 import app.revanced.extension.boostforreddit.http.HttpUtils;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackMachine;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackResponse;
-import app.revanced.extension.shared.Logger;
 import okhttp3.Interceptor;
 import okhttp3.Response;
 import okhttp3.Request;
