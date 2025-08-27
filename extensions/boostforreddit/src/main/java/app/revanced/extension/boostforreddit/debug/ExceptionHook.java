@@ -25,4 +25,11 @@ public class ExceptionHook {
                 t
         );
     }
+
+    public static void log(String s, Object[] objs) {
+        LoggingUtils.logInfo(
+                true,
+                () -> String.format(s, objs)
+        );
+    }
 }
