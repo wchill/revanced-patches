@@ -565,6 +565,10 @@ public final class app/revanced/patches/reddit/customclients/boostforreddit/http
 	public static final fun getUndeleteRedditPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }
 
+public final class app/revanced/patches/reddit/customclients/boostforreddit/http/redgifs/FixRedgifsApiKt {
+	public static final fun getFixRedgifsApi ()Lapp/revanced/patcher/patch/BytecodePatch;
+}
+
 public final class app/revanced/patches/reddit/customclients/boostforreddit/misc/extension/SharedExtensionPatchKt {
 	public static final fun getSharedExtensionPatch ()Lapp/revanced/patcher/patch/BytecodePatch;
 }

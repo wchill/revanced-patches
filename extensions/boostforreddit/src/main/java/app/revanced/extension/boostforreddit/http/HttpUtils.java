@@ -13,6 +13,7 @@ import app.revanced.extension.boostforreddit.http.arcticshift.ArcticShiftThrottl
 import app.revanced.extension.boostforreddit.http.wayback.WaybackThrottlingInterceptor;
 import app.revanced.extension.boostforreddit.utils.CacheUtils;
 import okhttp3.Cache;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -38,7 +39,11 @@ public class HttpUtils {
     }
 
     public static JsonNode getJson(String url) throws IOException {
-        try (Response response = get(url)) {
+        return getJson(url, Headers.of());
+    }
+
+    public static JsonNode getJson(String url, Headers headers) throws IOException {
+        try (Response response = get(url, headers)) {
             String json = response.body().string();
             return objectMapper.readTree(json);
         }
@@ -83,12 +88,17 @@ public class HttpUtils {
                 .build();
     }
 
-    public static Response get(String url) throws IOException {
+    public static Response get(String url, Headers headers) throws IOException {
         Request request = new Request.Builder()
                 .get()
                 .url(url)
+                .headers(headers)
                 .build();
         return httpClient.newCall(request).execute();
+    }
+
+    public static Response get(String url) throws IOException {
+        return get(url, Headers.of());
     }
 
     public static boolean isPresent(String url) throws IOException {

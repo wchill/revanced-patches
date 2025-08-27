@@ -10,6 +10,7 @@ import app.revanced.extension.boostforreddit.http.imgur.ImgurUndeleteInterceptor
 import app.revanced.extension.boostforreddit.http.reddit.RedditMediaUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubredditUndeleteInterceptor;
+import app.revanced.extension.boostforreddit.http.redgifs.RedgifsApiInterceptor;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackThrottlingInterceptor;
 import app.revanced.extension.boostforreddit.utils.LoggingUtils;
 import okhttp3.Call;
@@ -75,5 +76,9 @@ public class OkHttpRequestHook {
                 .addInterceptor(new RedditSubmissionUndeleteInterceptor())
                 .addNetworkInterceptor(new WaybackThrottlingInterceptor())
                 .addNetworkInterceptor(new ArcticShiftThrottlingInterceptor());
+    }
+
+    public static OkHttpClient.Builder installRedgifsInterceptor() {
+        return new OkHttpClient.Builder().addNetworkInterceptor(new RedgifsApiInterceptor());
     }
 }
