@@ -1,13 +1,21 @@
 package app.revanced.extension.boostforreddit.http.reddit;
 
+import android.text.Editable;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+
+import net.dean.jraw.models.Comment;
+import net.dean.jraw.models.Listing;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -87,35 +95,8 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
         JsonNode commentsListing = json.get(1);
         ArrayNode comments = (ArrayNode) commentsListing.get("data").get("children");
         {
-            Map<String, EditableObjectNode> removedComments = new HashMap<>();
-            List<EditableObjectNode> topLevelReplies = new ArrayList<>();
             for (JsonNode comment : comments) {
-                topLevelReplies.add(findDeletedComments(comment.get("data"), removedComments));
-            }
-            if (!removedComments.isEmpty()) {
-                JsonNode jsonNode = ArcticShift.getIds(ArcticShift.SubmissionType.COMMENTS, removedComments.keySet());
-                for (JsonNode childNode : jsonNode.get("data")) {
-                    String id = childNode.get("id").asText();
-                    EditableObjectNode comment = removedComments.get(id);
-                    updateCommentJson(comment, childNode);
-                    removedComments.remove(id);
-                }
-
-                for (EditableObjectNode childNode : removedComments.values()) {
-                    updateCommentJson(childNode, null);
-                    childNode.setIfUnset("saved", BooleanNode.FALSE);
-                    childNode.setIfUnset("controversiality", new IntNode(0));
-                    childNode.setIfUnset("score_hidden", BooleanNode.FALSE);
-                    childNode.setIfUnset("locked", BooleanNode.TRUE);
-                    childNode.setIfUnset("likes", NullNode.instance);
-                    if (childNode.get("body") != null) {
-                        String renderedHtml = MarkdownRenderer.render(childNode.get("body").asText());
-                        childNode.set("body_html", new TextNode(renderedHtml));
-                    }
-                    childNode.setIfUnset("link_id", new TextNode("t3_" + submissionId));
-                }
-
-                commentsListing = RedditApiUtils.createListing(commentsListing, topLevelReplies);
+                restoreDeletedComments(comment);
             }
         }
 
@@ -126,7 +107,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
     }
 
     private JsonNode handle4xx(Request request, String submissionId) throws IOException {
-        EditableObjectNode submissionNode = new EditableObjectNode(Map.of(
+        ObjectNode submissionNode = new EditableObjectNode(Map.of(
                 "kind", new TextNode("t3"),
                 "data", fetchDeletedSubmission(request, submissionId, null)
         ));
@@ -141,8 +122,8 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
             )));
         }
         ArrayNode root = new ArrayNode(JsonNodeFactory.instance);
-        EditableObjectNode submissionListing = RedditApiUtils.createListing(List.of(submissionNode));
-        EditableObjectNode commentsListing = RedditApiUtils.createListing(topLevelReplies);
+        ObjectNode submissionListing = RedditApiUtils.createListing(List.of(submissionNode));
+        ObjectNode commentsListing = RedditApiUtils.createListing(topLevelReplies);
         root.add(submissionListing);
         root.add(commentsListing);
         return root;
@@ -154,7 +135,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
             return HttpUtils.getJsonFromString(cachedJson.get());
         }
 
-        JsonNode undeletedData = ArcticShift.getIds(ArcticShift.SubmissionType.POSTS, List.of(id));
+        ArrayNode undeletedData = ArcticShift.getIds(ArcticShift.SubmissionType.POSTS, List.of(id));
 
         EditableObjectNode editableNode;
         if (dataNode == null) {
@@ -164,7 +145,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
             editableNode = EditableObjectNode.wrap(dataNode);
             RedditApiUtils.setRemovalEmoji(editableNode);
         }
-        ArcticShift.updateSubmissionNode(editableNode, undeletedData.get("data").get(0));
+        ArcticShift.updateSubmissionNode(editableNode, undeletedData.get(0));
         editableNode.set("archived", BooleanNode.TRUE);
         editableNode.set("stickied", BooleanNode.FALSE);
         editableNode.setIfUnset("locked", BooleanNode.TRUE);
@@ -200,36 +181,35 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
         return editableNode;
     }
 
-    private EditableObjectNode findDeletedComments(JsonNode comment, Map<String, EditableObjectNode> deletedCommentIds) {
-        EditableObjectNode wrappedComment = EditableObjectNode.wrap(comment);
-        if (RedditApiUtils.isContentRemoved(wrappedComment)) {
-            deletedCommentIds.put(wrappedComment.get("id").asText(), wrappedComment);
-        }
-        JsonNode replies = wrappedComment.get("replies");
-        if (replies != null && !replies.isNull() && replies.get("data") != null) {
-            List<JsonNode> newReplies = new ArrayList<>();
-            for (JsonNode reply : replies.get("data").get("children")) {
-                EditableObjectNode wrappedReply = findDeletedComments(reply.get("data"), deletedCommentIds);
-                newReplies.add(wrappedReply);
+    private void restoreDeletedComments(JsonNode comment) {
+        ObjectNode data = (ObjectNode) comment.get("data");
+        if (RedditApiUtils.isContentRemoved(data)) {
+            RedditApiUtils.setRemovalEmoji(data);
+            Optional<String> cachedJson = commentsCache.get(data.get("id").asText());
+            if (cachedJson.isPresent()) {
+                ArcticShift.updateCommentNode(data, HttpUtils.getJsonFromString(cachedJson.get()));
+            } else {
+                try {
+                    ArrayNode response = ArcticShift.getIds(ArcticShift.SubmissionType.COMMENTS, List.of(data.get("id").asText()));
+                    if (response.size() > 0) {
+                        ArcticShift.updateCommentNode(data, response.get(0));
+                    }
+                    commentsCache.put(data.get("id").asText(), HttpUtils.getStringFromJson(data));
+                } catch (IOException e) {
+                    LoggingUtils.logException(false, () -> "Failed to restore comment " + comment.get("id").asText());
+                }
             }
-            JsonNode newListing = RedditApiUtils.createListing(replies, newReplies);
-            wrappedComment.set("replies", newListing);
-        } else {
-            wrappedComment.set("replies", new TextNode(""));
+            if ("DELETED".equals(data.get("collapsed_reason_code").asText())) {
+                data.replace("collapsed", BooleanNode.FALSE);
+            }
         }
-        return new EditableObjectNode(Map.of(
-                "kind", new TextNode("t1"),
-                "data", wrappedComment
-        ));
-    }
 
-    private void updateCommentJson(EditableObjectNode comment, JsonNode newComment) {
-        RedditApiUtils.setRemovalEmoji(comment);
-        if ("DELETED".equals(comment.data("collapsed_reason_code"))) {
-            comment.set("collapsed", BooleanNode.FALSE);
+        JsonNode replies = data.get("replies");
+        if (replies != null && !replies.isNull() && replies.get("data") != null) {
+            for (JsonNode reply : replies.get("data").get("children")) {
+                restoreDeletedComments(reply);
+            }
         }
-        ArcticShift.updateCommentNode(comment, newComment);
-        commentsCache.put(comment.get("id").asText(), HttpUtils.getStringFromJson(comment));
     }
 
     private void checkReply(EditableObjectNode node) {
