@@ -5,36 +5,25 @@ import app.revanced.util.literal
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 
-/**
- * Matches with the class found in [videoQualitySetterFingerprint].
- */
-internal val setQualityByIndexMethodClassFieldReferenceFingerprint = fingerprint {
-    returns("V")
-    parameters("L")
-    opcodes(
-        Opcode.IGET_OBJECT,
-        Opcode.IPUT_OBJECT,
-        Opcode.IGET_OBJECT,
-    )
-}
-
 internal val videoQualityItemOnClickParentFingerprint = fingerprint {
     returns("V")
     strings("VIDEO_QUALITIES_MENU_BOTTOM_SHEET_FRAGMENT")
 }
 
-internal val videoQualitySetterFingerprint = fingerprint {
-    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
+/**
+ * Resolves to class found in [videoQualityItemOnClickFingerprint].
+ */
+internal val videoQualityItemOnClickFingerprint = fingerprint {
     returns("V")
-    parameters("[L", "I", "Z")
-    opcodes(
-        Opcode.IF_EQZ,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.MOVE_RESULT_OBJECT,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.IPUT_BOOLEAN,
+    parameters(
+        "Landroid/widget/AdapterView;",
+        "Landroid/view/View;",
+        "I",
+        "J"
     )
-    strings("menu_item_video_quality")
+    custom { method, _ ->
+        method.name == "onItemClick"
+    }
 }
 
 

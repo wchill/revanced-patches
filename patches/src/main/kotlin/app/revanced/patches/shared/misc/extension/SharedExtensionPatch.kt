@@ -3,11 +3,11 @@ package app.revanced.patches.shared.misc.extension
 import app.revanced.patcher.Fingerprint
 import app.revanced.patcher.FingerprintBuilder
 import app.revanced.patcher.extensions.InstructionExtensions.addInstruction
-import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.fingerprint
 import app.revanced.patcher.patch.BytecodePatchContext
 import app.revanced.patcher.patch.PatchException
 import app.revanced.patcher.patch.bytecodePatch
+import app.revanced.util.returnEarly
 import com.android.tools.smali.dexlib2.iface.Method
 import java.net.URLDecoder
 import java.util.jar.JarFile
@@ -41,11 +41,12 @@ fun sharedExtensionPatch(
 
     execute {
         if (classes.none { EXTENSION_CLASS_DESCRIPTOR == it.type }) {
-            throw PatchException(
-                "Shared extension has not been merged yet. This patch can not succeed without merging it.",
-            )
+            throw PatchException("Shared extension is not available. This patch can not succeed without it.")
         }
+    }
 
+    finalize {
+        // The hooks are made in finalize to ensure that the context is hooked before any other patches.
         hooks.forEach { hook -> hook(EXTENSION_CLASS_DESCRIPTOR) }
 
         // Modify Utils method to include the patches release version.
@@ -79,22 +80,15 @@ fun sharedExtensionPatch(
             }
 
             val manifestValue = getPatchesManifestEntry("Version")
-
-            addInstructions(
-                0,
-                """
-                    const-string v0, "$manifestValue"
-                    return-object v0
-                """,
-            )
+            returnEarly(manifestValue)
         }
     }
 }
 
 class ExtensionHook internal constructor(
-    private val fingerprint: Fingerprint,
-    private val insertIndexResolver: ((Method) -> Int),
-    private val contextRegisterResolver: (Method) -> String,
+    internal val fingerprint: Fingerprint,
+    private val insertIndexResolver: BytecodePatchContext.(Method) -> Int,
+    private val contextRegisterResolver: BytecodePatchContext.(Method) -> String,
 ) {
     context(BytecodePatchContext)
     operator fun invoke(extensionClassDescriptor: String) {
@@ -104,13 +98,19 @@ class ExtensionHook internal constructor(
         fingerprint.method.addInstruction(
             insertIndex,
             "invoke-static/range { $contextRegister .. $contextRegister }, " +
-                "$extensionClassDescriptor->setContext(Landroid/content/Context;)V",
+                    "$extensionClassDescriptor->setContext(Landroid/content/Context;)V",
         )
     }
 }
 
 fun extensionHook(
-    insertIndexResolver: ((Method) -> Int) = { 0 },
-    contextRegisterResolver: (Method) -> String = { "p0" },
+    insertIndexResolver: BytecodePatchContext.(Method) -> Int = { 0 },
+    contextRegisterResolver: BytecodePatchContext.(Method) -> String = { "p0" },
+    fingerprint: Fingerprint,
+) = ExtensionHook(fingerprint, insertIndexResolver, contextRegisterResolver)
+
+fun extensionHook(
+    insertIndexResolver: BytecodePatchContext.(Method) -> Int = { 0 },
+    contextRegisterResolver: BytecodePatchContext.(Method) -> String = { "p0" },
     fingerprintBuilderBlock: FingerprintBuilder.() -> Unit,
-) = ExtensionHook(fingerprint(block = fingerprintBuilderBlock), insertIndexResolver, contextRegisterResolver)
+) = extensionHook(insertIndexResolver, contextRegisterResolver, fingerprint(block = fingerprintBuilderBlock))

@@ -5,24 +5,20 @@ import static app.revanced.extension.shared.Utils.getResourceIdentifier;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.preference.PreferenceFragment;
 import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toolbar;
 
-import java.util.Objects;
-
 import app.revanced.extension.shared.Logger;
 import app.revanced.extension.shared.Utils;
 import app.revanced.extension.shared.settings.AppLanguage;
 import app.revanced.extension.shared.settings.BaseSettings;
-import app.revanced.extension.youtube.ThemeHelper;
 import app.revanced.extension.youtube.patches.VersionCheckPatch;
 import app.revanced.extension.youtube.patches.spoof.SpoofAppVersionPatch;
 import app.revanced.extension.youtube.settings.preference.ReVancedPreferenceFragment;
-import app.revanced.extension.youtube.settings.preference.ReturnYouTubeDislikePreferenceFragment;
-import app.revanced.extension.youtube.settings.preference.SponsorBlockPreferenceFragment;
 
 /**
  * Hooks LicenseActivity.
@@ -30,9 +26,14 @@ import app.revanced.extension.youtube.settings.preference.SponsorBlockPreference
  * This class is responsible for injecting our own fragment by replacing the LicenseActivity.
  */
 @SuppressWarnings("unused")
-public class LicenseActivityHook {
+public class LicenseActivityHook extends Activity {
+
+    private static int currentThemeValueOrdinal = -1; // Must initially be a non-valid enum ordinal value.
 
     private static ViewGroup.LayoutParams toolbarLayoutParams;
+
+    @SuppressLint("StaticFieldLeak")
+    public static SearchViewController searchViewController;
 
     public static void setToolbarLayoutParams(Toolbar toolbar) {
         if (toolbarLayoutParams != null) {
@@ -83,32 +84,20 @@ public class LicenseActivityHook {
      */
     public static void initialize(Activity licenseActivity) {
         try {
-            ThemeHelper.setActivityTheme(licenseActivity);
+            setActivityTheme(licenseActivity);
+            ReVancedPreferenceFragment.setNavigationBarColor(licenseActivity.getWindow());
             licenseActivity.setContentView(getResourceIdentifier(
                     "revanced_settings_with_toolbar", "layout"));
 
-            PreferenceFragment fragment;
-            String toolbarTitleResourceName;
-            String dataString = Objects.requireNonNull(licenseActivity.getIntent().getDataString());
-            switch (dataString) {
-                case "revanced_sb_settings_intent":
-                    toolbarTitleResourceName = "revanced_sb_settings_title";
-                    fragment = new SponsorBlockPreferenceFragment();
-                    break;
-                case "revanced_ryd_settings_intent":
-                    toolbarTitleResourceName = "revanced_ryd_settings_title";
-                    fragment = new ReturnYouTubeDislikePreferenceFragment();
-                    break;
-                case "revanced_settings_intent":
-                    toolbarTitleResourceName = "revanced_settings_title";
-                    fragment = new ReVancedPreferenceFragment();
-                    break;
-                default:
-                    Logger.printException(() -> "Unknown setting: " + dataString);
-                    return;
+            // Sanity check.
+            String dataString = licenseActivity.getIntent().getDataString();
+            if (!"revanced_settings_intent".equals(dataString)) {
+                Logger.printException(() -> "Unknown intent: " + dataString);
+                return;
             }
 
-            createToolbar(licenseActivity, toolbarTitleResourceName);
+            PreferenceFragment fragment = new ReVancedPreferenceFragment();
+            createToolbar(licenseActivity, fragment);
 
             //noinspection deprecation
             licenseActivity.getFragmentManager()
@@ -121,33 +110,72 @@ public class LicenseActivityHook {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    private static void createToolbar(Activity activity, String toolbarTitleResourceName) {
+    private static void createToolbar(Activity activity, PreferenceFragment fragment) {
         // Replace dummy placeholder toolbar.
         // This is required to fix submenu title alignment issue with Android ASOP 15+
         ViewGroup toolBarParent = activity.findViewById(
                 getResourceIdentifier("revanced_toolbar_parent", "id"));
-        ViewGroup dummyToolbar = Utils.getChildViewByResourceName(toolBarParent,"revanced_toolbar");
+        ViewGroup dummyToolbar = Utils.getChildViewByResourceName(toolBarParent, "revanced_toolbar");
         toolbarLayoutParams = dummyToolbar.getLayoutParams();
         toolBarParent.removeView(dummyToolbar);
 
         Toolbar toolbar = new Toolbar(toolBarParent.getContext());
-        toolbar.setBackgroundColor(ThemeHelper.getToolbarBackgroundColor());
+        toolbar.setBackgroundColor(getToolbarBackgroundColor());
         toolbar.setNavigationIcon(ReVancedPreferenceFragment.getBackButtonDrawable());
-        toolbar.setNavigationOnClickListener(view -> activity.onBackPressed());
-        toolbar.setTitle(getResourceIdentifier(toolbarTitleResourceName, "string"));
+        toolbar.setTitle(getResourceIdentifier("revanced_settings_title", "string"));
 
-        final int margin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16,
-                Utils.getContext().getResources().getDisplayMetrics());
+        final int margin = Utils.dipToPixels(16);
         toolbar.setTitleMarginStart(margin);
         toolbar.setTitleMarginEnd(margin);
         TextView toolbarTextView = Utils.getChildView(toolbar, false,
                 view -> view instanceof TextView);
         if (toolbarTextView != null) {
-            toolbarTextView.setTextColor(ThemeHelper.getForegroundColor());
+            toolbarTextView.setTextColor(Utils.getAppForegroundColor());
+            toolbarTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
         }
         setToolbarLayoutParams(toolbar);
+
+        // Add Search bar only for ReVancedPreferenceFragment.
+        if (fragment instanceof ReVancedPreferenceFragment) {
+            searchViewController = SearchViewController.addSearchViewComponents(activity, toolbar, (ReVancedPreferenceFragment) fragment);
+        }
 
         toolBarParent.addView(toolbar, 0);
     }
 
+    public static void setActivityTheme(Activity activity) {
+        final var theme = Utils.isDarkModeEnabled()
+                ? "Theme.YouTube.Settings.Dark"
+                : "Theme.YouTube.Settings";
+        activity.setTheme(getResourceIdentifier(theme, "style"));
+    }
+
+    public static int getToolbarBackgroundColor() {
+        final String colorName = Utils.isDarkModeEnabled()
+                ? "yt_black3"
+                : "yt_white1";
+
+        return Utils.getColorFromString(colorName);
+    }
+
+    /**
+     * Injection point.
+     *
+     * Updates dark/light mode since YT settings can force light/dark mode
+     * which can differ from the global device settings.
+     */
+    @SuppressWarnings("unused")
+    public static void updateLightDarkModeStatus(Enum<?> value) {
+        final int themeOrdinal = value.ordinal();
+        if (currentThemeValueOrdinal != themeOrdinal) {
+            currentThemeValueOrdinal = themeOrdinal;
+            Utils.setIsDarkModeEnabled(themeOrdinal == 1);
+        }
+    }
+
+    public static void handleConfigurationChanged(Activity activity, Configuration newConfig) {
+        if (searchViewController != null) {
+            searchViewController.handleOrientationChange(newConfig.orientation);
+        }
+    }
 }

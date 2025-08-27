@@ -1,13 +1,8 @@
 package app.revanced.extension.youtube.patches.components;
 
-import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import app.revanced.extension.shared.Logger;
-import app.revanced.extension.shared.settings.BaseSettings;
 
 /**
  * Filters litho based components.
@@ -63,10 +58,6 @@ abstract class Filter {
      * Default implementation is to always filter the matched component and log the action.
      * Subclasses can perform additional or different checks if needed.
      * <p>
-     * If the content is to be filtered, subclasses should always
-     * call this method (and never return a plain 'true').
-     * That way the logs will always show when a component was filtered and which filter hide it.
-     * <p>
      * Method is called off the main thread.
      *
      * @param matchedGroup The actual filter that matched.
@@ -74,16 +65,8 @@ abstract class Filter {
      * @param contentIndex Matched index of the identifier or path.
      * @return True if the litho component should be filtered out.
      */
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
-        if (BaseSettings.DEBUG.get()) {
-            String filterSimpleName = getClass().getSimpleName();
-            if (contentType == FilterContentType.IDENTIFIER) {
-                Logger.printDebug(() -> filterSimpleName + " Filtered identifier: " + identifier);
-            } else {
-                Logger.printDebug(() -> filterSimpleName + " Filtered path: " + path);
-            }
-        }
         return true;
     }
 }

@@ -6,6 +6,7 @@ import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMu
 import app.revanced.patches.all.misc.resources.addResources
 import app.revanced.patches.all.misc.resources.addResourcesPatch
 import app.revanced.patches.shared.misc.settings.preference.InputType
+import app.revanced.patches.shared.misc.settings.preference.ListPreference
 import app.revanced.patches.shared.misc.settings.preference.SwitchPreference
 import app.revanced.patches.shared.misc.settings.preference.TextPreference
 import app.revanced.patches.youtube.misc.extension.sharedExtensionPatch
@@ -13,7 +14,7 @@ import app.revanced.patches.youtube.misc.playertype.playerTypeHookPatch
 import app.revanced.patches.youtube.misc.playservice.is_19_43_or_greater
 import app.revanced.patches.youtube.misc.settings.PreferenceScreen
 import app.revanced.patches.youtube.misc.settings.settingsPatch
-import app.revanced.patches.youtube.shared.mainActivityFingerprint
+import app.revanced.patches.youtube.shared.mainActivityConstructorFingerprint
 import app.revanced.util.*
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -42,11 +43,18 @@ private val swipeControlsResourcePatch = resourcePatch {
             SwitchPreference("revanced_swipe_haptic_feedback"),
             SwitchPreference("revanced_swipe_save_and_restore_brightness"),
             SwitchPreference("revanced_swipe_lowest_value_enable_auto_brightness"),
-            SwitchPreference("revanced_swipe_show_circular_overlay"),
-            SwitchPreference("revanced_swipe_overlay_minimal_style"),
+            ListPreference("revanced_swipe_overlay_style"),
             TextPreference("revanced_swipe_overlay_background_opacity", inputType = InputType.NUMBER),
+            TextPreference("revanced_swipe_overlay_progress_brightness_color",
+                tag = "app.revanced.extension.shared.settings.preference.ColorPickerPreference",
+                inputType = InputType.TEXT_CAP_CHARACTERS),
+            TextPreference("revanced_swipe_overlay_progress_volume_color",
+                tag = "app.revanced.extension.shared.settings.preference.ColorPickerPreference",
+                inputType = InputType.TEXT_CAP_CHARACTERS),
+            TextPreference("revanced_swipe_text_overlay_size", inputType = InputType.NUMBER),
             TextPreference("revanced_swipe_overlay_timeout", inputType = InputType.NUMBER),
             TextPreference("revanced_swipe_threshold", inputType = InputType.NUMBER),
+            TextPreference("revanced_swipe_volume_sensitivity", inputType = InputType.NUMBER),
         )
 
         copyResources(
@@ -80,18 +88,18 @@ val swipeControlsPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
         val wrapperClass = swipeControlsHostActivityFingerprint.classDef
-        val targetClass = mainActivityFingerprint.classDef
+        val targetClass = mainActivityConstructorFingerprint.classDef
 
         // Inject the wrapper class from the extension into the class hierarchy of MainActivity.
         wrapperClass.setSuperClass(targetClass.superclass)
@@ -117,7 +125,7 @@ val swipeControlsPatch = bytecodePatch(
         // region patch to enable/disable swipe to change video.
 
         if (is_19_43_or_greater) {
-            swipeChangeVideoFingerprint.method.insertFeatureFlagBooleanOverride(
+            swipeChangeVideoFingerprint.method.insertLiteralOverride(
                 SWIPE_CHANGE_VIDEO_FEATURE_FLAG,
                 "$EXTENSION_CLASS_DESCRIPTOR->allowSwipeChangeVideo(Z)Z"
             )

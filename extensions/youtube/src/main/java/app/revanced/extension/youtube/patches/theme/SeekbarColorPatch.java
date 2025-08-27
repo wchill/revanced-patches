@@ -1,6 +1,8 @@
 package app.revanced.extension.youtube.patches.theme;
 
 import static app.revanced.extension.shared.StringRef.str;
+import static app.revanced.extension.shared.Utils.clamp;
+import static app.revanced.extension.youtube.patches.theme.ThemePatch.SplashScreenAnimationStyle;
 
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -59,7 +61,7 @@ public final class SeekbarColorPatch {
      * this is the color value of {@link Settings#SEEKBAR_CUSTOM_COLOR_PRIMARY}.
      * Otherwise this is {@link #ORIGINAL_SEEKBAR_COLOR}.
      */
-    private static int customSeekbarColor = ORIGINAL_SEEKBAR_COLOR;
+    private static final int customSeekbarColor;
 
     /**
      * Custom seekbar hue, saturation, and brightness values.
@@ -76,24 +78,25 @@ public final class SeekbarColorPatch {
         Color.colorToHSV(ORIGINAL_SEEKBAR_COLOR, hsv);
         ORIGINAL_SEEKBAR_COLOR_BRIGHTNESS = hsv[2];
 
-        if (SEEKBAR_CUSTOM_COLOR_ENABLED) {
-            loadCustomSeekbarColor();
-        }
+        customSeekbarColor = SEEKBAR_CUSTOM_COLOR_ENABLED
+                ? loadCustomSeekbarColor()
+                : ORIGINAL_SEEKBAR_COLOR;
     }
 
-    private static void loadCustomSeekbarColor() {
+    private static int loadCustomSeekbarColor() {
         try {
-            customSeekbarColor = Color.parseColor(Settings.SEEKBAR_CUSTOM_COLOR_PRIMARY.get());
-            Color.colorToHSV(customSeekbarColor, customSeekbarColorHSV);
-
-            customSeekbarColorGradient[0] = customSeekbarColor;
+            final int color = Color.parseColor(Settings.SEEKBAR_CUSTOM_COLOR_PRIMARY.get());
+            Color.colorToHSV(color, customSeekbarColorHSV);
+            customSeekbarColorGradient[0] = color;
             customSeekbarColorGradient[1] = Color.parseColor(Settings.SEEKBAR_CUSTOM_COLOR_ACCENT.get());
+
+            return color;
         } catch (Exception ex) {
             Utils.showToastShort(str("revanced_seekbar_custom_color_invalid"));
             Settings.SEEKBAR_CUSTOM_COLOR_PRIMARY.resetToDefault();
             Settings.SEEKBAR_CUSTOM_COLOR_ACCENT.resetToDefault();
 
-            loadCustomSeekbarColor();
+            return loadCustomSeekbarColor();
         }
     }
 
@@ -113,6 +116,7 @@ public final class SeekbarColorPatch {
                 : (int) channel3Bits;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static String get9BitStyleIdentifier(int color24Bit) {
         final int r3 = colorChannelTo3Bits(Color.red(color24Bit));
         final int g3 = colorChannelTo3Bits(Color.green(color24Bit));
@@ -122,7 +126,7 @@ public final class SeekbarColorPatch {
     }
 
     /**
-     * Injection point
+     * injection point.
      */
     public static boolean useLotteLaunchSplashScreen(boolean original) {
         // This method is only used for development purposes to force the old style launch screen.
@@ -170,21 +174,13 @@ public final class SeekbarColorPatch {
      */
     public static void setSplashAnimationLottie(LottieAnimationView view, int resourceId) {
         try {
-            if (!SEEKBAR_CUSTOM_COLOR_ENABLED) {
+            SplashScreenAnimationStyle animationStyle = Settings.SPLASH_SCREEN_ANIMATION_STYLE.get();
+            if (!SEEKBAR_CUSTOM_COLOR_ENABLED
+                    // Black and white animations cannot use color replacements.
+                    || animationStyle == SplashScreenAnimationStyle.FPS_30_BLACK_AND_WHITE
+                    || animationStyle == SplashScreenAnimationStyle.FPS_60_BLACK_AND_WHITE) {
                 view.patch_setAnimation(resourceId);
                 return;
-            }
-
-            //noinspection ConstantConditions
-            if (false) { // Set true to force slow animation for development.
-                final int longAnimation = Utils.getResourceIdentifier(
-                        Utils.isDarkModeEnabled(Utils.getContext())
-                                ? "startup_animation_5s_30fps_dark"
-                                : "startup_animation_5s_30fps_light",
-                        "raw");
-                if (longAnimation != 0) {
-                    resourceId = longAnimation;
-                }
             }
 
             // Must specify primary key name otherwise the morphing YT logo color is also changed.
@@ -196,21 +192,16 @@ public final class SeekbarColorPatch {
             String replacementAccent = originalKey + getColorStringArray(customSeekbarColorGradient[1]);
 
             String json = loadRawResourceAsString(resourceId);
-            if (json == null) {
-                return; // Should never happen.
-            }
+            String replacement = json
+                    .replace(originalPrimary, replacementPrimary)
+                    .replace(originalAccent, replacementAccent);
 
             if (BaseSettings.DEBUG.get() && (!json.contains(originalPrimary) || !json.contains(originalAccent))) {
-                String jsonFinal = json;
-                Logger.printException(() -> "Could not replace launch animation colors: " + jsonFinal);
+                Logger.printException(() -> "Could not replace splash animation colors: " + json);
             }
 
-            Logger.printDebug(() -> "Replacing Lottie animation JSON");
-            json = json.replace(originalPrimary, replacementPrimary);
-            json = json.replace(originalAccent, replacementAccent);
-
             // cacheKey is not needed since the animation will not be reused.
-            view.patch_setAnimation(new ByteArrayInputStream(json.getBytes()), null);
+            view.patch_setAnimation(new ByteArrayInputStream(replacement.getBytes()), null);
         } catch (Exception ex) {
             Logger.printException(() -> "setSplashAnimationLottie failure", ex);
         }
@@ -226,12 +217,12 @@ public final class SeekbarColorPatch {
     }
 
     private static String loadRawResourceAsString(int resourceId) {
+        //noinspection CharsetObjectCanBeUsed
         try (InputStream inputStream = Utils.getContext().getResources().openRawResource(resourceId);
              Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name()).useDelimiter("\\A")) {
             return scanner.next();
         } catch (IOException e) {
-            Logger.printException(() -> "Could not load resource: " + resourceId);
-            return null;
+            throw new IllegalStateException("Could not load resource: " + resourceId);
         }
     }
 
@@ -281,6 +272,20 @@ public final class SeekbarColorPatch {
 
     /**
      * Injection point.
+     * 19.49+
+     */
+    public static int[] getPlayerLinearGradient(int[] original, int x0, int y1) {
+        // This hook is used for both the player and the feed.
+        // Feed usage always has x0 and y1 value of zero, and the player is always non zero.
+        if (HIDE_SEEKBAR_THUMBNAIL_ENABLED && x0 == 0 && y1 == 0) {
+            return HIDDEN_SEEKBAR_GRADIENT_COLORS;
+        }
+        return getPlayerLinearGradient(original);
+    }
+
+    /**
+     * Injection point.
+     * Pre 19.49
      */
     public static int[] getPlayerLinearGradient(int[] original) {
         return SEEKBAR_CUSTOM_COLOR_ENABLED
@@ -362,15 +367,5 @@ public final class SeekbarColorPatch {
             Logger.printException(() -> "getSeekbarColorValue failure", ex);
             return originalColor;
         }
-    }
-
-    /** @noinspection SameParameterValue */
-    private static int clamp(int value, int lower, int upper) {
-        return Math.max(lower, Math.min(value, upper));
-    }
-
-    /** @noinspection SameParameterValue */
-    private static float clamp(float value, float lower, float upper) {
-        return Math.max(lower, Math.min(value, upper));
     }
 }

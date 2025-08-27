@@ -1,24 +1,33 @@
 package app.revanced.extension.youtube.patches.components;
 
-import androidx.annotation.Nullable;
-
 import app.revanced.extension.youtube.settings.Settings;
+import app.revanced.extension.youtube.shared.PlayerType;
 
 @SuppressWarnings("unused")
 final class CommentsFilter extends Filter {
 
-    private static final String TIMESTAMP_OR_EMOJI_BUTTONS_ENDS_WITH_PATH
-            = "|CellType|ContainerType|ContainerType|ContainerType|ContainerType|ContainerType|";
-
-    private final StringFilterGroup commentComposer;
-    private final ByteArrayFilterGroup emojiPickerBufferGroup;
-    private final StringFilterGroup filterChipBar;
+    private final StringFilterGroup chipBar;
     private final ByteArrayFilterGroup aiCommentsSummary;
     
     public CommentsFilter() {
         var chatSummary = new StringFilterGroup(
                 Settings.HIDE_COMMENTS_AI_CHAT_SUMMARY,
                 "live_chat_summary_banner.eml"
+        );
+
+        chipBar = new StringFilterGroup(
+                Settings.HIDE_COMMENTS_AI_SUMMARY,
+                "chip_bar.eml"
+        );
+
+        aiCommentsSummary = new ByteArrayFilterGroup(
+                null,
+                "yt_fill_spark_"
+        );
+
+        var channelGuidelines = new StringFilterGroup(
+                Settings.HIDE_COMMENTS_CHANNEL_GUIDELINES,
+                "channel_guidelines_entry_banner"
         );
 
         var commentsByMembers = new StringFilterGroup(
@@ -31,6 +40,11 @@ final class CommentsFilter extends Filter {
                 Settings.HIDE_COMMENTS_SECTION,
                 "video_metadata_carousel",
                 "_comments"
+        );
+
+        var communityGuidelines = new StringFilterGroup(
+                Settings.HIDE_COMMENTS_COMMUNITY_GUIDELINES,
+                "community_guidelines"
         );
 
         var createAShort = new StringFilterGroup(
@@ -50,60 +64,35 @@ final class CommentsFilter extends Filter {
                 "super_thanks_button.eml"
         );
 
-        commentComposer = new StringFilterGroup(
-                Settings.HIDE_COMMENTS_TIMESTAMP_AND_EMOJI_BUTTONS,
-                "comment_composer.eml"
-        );
-
-        emojiPickerBufferGroup = new ByteArrayFilterGroup(
-                null,
-                "id.comment.quick_emoji.button"
-        );
-
-        filterChipBar = new StringFilterGroup(
-                Settings.HIDE_COMMENTS_AI_SUMMARY,
-                "filter_chip_bar.eml"
-        );
-
-        aiCommentsSummary = new ByteArrayFilterGroup(
-                null,
-                "yt_fill_spark_"
+        StringFilterGroup timestampButton = new StringFilterGroup(
+                Settings.HIDE_COMMENTS_TIMESTAMP_BUTTON,
+                "composer_timestamp_button.eml"
         );
 
         addPathCallbacks(
+                channelGuidelines,
                 chatSummary,
+                chipBar,
                 commentsByMembers,
                 comments,
+                communityGuidelines,
                 createAShort,
                 previewComment,
                 thanksButton,
-                commentComposer,
-                filterChipBar
+                timestampButton
+
         );
     }
 
     @Override
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
-        if (matchedGroup == commentComposer) {
-            // To completely hide the emoji buttons (and leave no empty space), the timestamp button is
-            // also hidden because the buffer is exactly the same and there's no way selectively hide.
-            if (contentIndex == 0
-                    && path.endsWith(TIMESTAMP_OR_EMOJI_BUTTONS_ENDS_WITH_PATH)
-                    && emojiPickerBufferGroup.check(protobufBufferArray).isFiltered()) {
-                return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-
-            return false;
+        if (matchedGroup == chipBar) {
+            // Playlist sort button uses same components and must only filter if the player is opened.
+            return PlayerType.getCurrent().isMaximizedOrFullscreen()
+                    && aiCommentsSummary.check(buffer).isFiltered();
         }
 
-        if (matchedGroup == filterChipBar) {
-            if (aiCommentsSummary.check(protobufBufferArray).isFiltered()) {
-                return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-            return false;
-        }
-
-        return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
+        return true;
     }
 }

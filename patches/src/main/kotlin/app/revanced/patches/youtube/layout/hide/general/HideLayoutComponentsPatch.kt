@@ -8,6 +8,7 @@ import app.revanced.patcher.extensions.InstructionExtensions.addInstructionsWith
 import app.revanced.patcher.extensions.InstructionExtensions.getInstruction
 import app.revanced.patcher.extensions.InstructionExtensions.instructions
 import app.revanced.patcher.extensions.InstructionExtensions.removeInstruction
+import app.revanced.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patcher.patch.resourcePatch
 import app.revanced.patcher.util.smali.ExternalLabel
@@ -20,11 +21,11 @@ import app.revanced.patches.shared.misc.settings.preference.*
 import app.revanced.patches.youtube.misc.litho.filter.addLithoFilter
 import app.revanced.patches.youtube.misc.litho.filter.lithoFilterPatch
 import app.revanced.patches.youtube.misc.navigation.navigationBarHookPatch
-import app.revanced.patches.youtube.misc.playservice.is_19_47_or_greater
 import app.revanced.patches.youtube.misc.playservice.is_20_07_or_greater
-import app.revanced.patches.youtube.misc.playservice.versionCheckPatch
+import app.revanced.patches.youtube.misc.playservice.is_20_09_or_greater
 import app.revanced.patches.youtube.misc.settings.PreferenceScreen
 import app.revanced.patches.youtube.misc.settings.settingsPatch
+import app.revanced.util.findFreeRegister
 import app.revanced.util.findInstructionIndicesReversedOrThrow
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstructionOrThrow
@@ -44,14 +45,12 @@ var crowdfundingBoxId = -1L
     private set
 var youTubeLogo = -1L
     private set
-
 var filterBarHeightId = -1L
     private set
 var relatedChipCloudMarginId = -1L
     private set
 var barContainerHeightId = -1L
     private set
-
 var fabButtonId = -1L
     private set
 
@@ -123,20 +122,17 @@ val hideLayoutComponentsPatch = bytecodePatch(
         addResourcesPatch,
         hideLayoutComponentsResourcePatch,
         navigationBarHookPatch,
-        versionCheckPatch
     )
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
-            "19.45.38",
-            "19.46.42",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -147,6 +143,7 @@ val hideLayoutComponentsPatch = bytecodePatch(
                 key = "revanced_hide_description_components_screen",
                 preferences = setOf(
                     SwitchPreference("revanced_hide_ai_generated_video_summary_section"),
+                    SwitchPreference("revanced_hide_ask_section"),
                     SwitchPreference("revanced_hide_attributes_section"),
                     SwitchPreference("revanced_hide_chapters_section"),
                     SwitchPreference("revanced_hide_info_cards_section"),
@@ -161,20 +158,19 @@ val hideLayoutComponentsPatch = bytecodePatch(
                 preferences = setOf(
                     SwitchPreference("revanced_hide_comments_ai_chat_summary"),
                     SwitchPreference("revanced_hide_comments_ai_summary"),
+                    SwitchPreference("revanced_hide_comments_channel_guidelines"),
                     SwitchPreference("revanced_hide_comments_by_members_header"),
                     SwitchPreference("revanced_hide_comments_section"),
+                    SwitchPreference("revanced_hide_comments_community_guidelines"),
                     SwitchPreference("revanced_hide_comments_create_a_short_button"),
-                    SwitchPreference("revanced_hide_comments_timestamp_and_emoji_buttons"),
                     SwitchPreference("revanced_hide_comments_preview_comment"),
                     SwitchPreference("revanced_hide_comments_thanks_button"),
+                    SwitchPreference("revanced_hide_comments_timestamp_button"),
                 ),
                 sorting = PreferenceScreenPreference.Sorting.UNSORTED,
             ),
             SwitchPreference("revanced_hide_channel_bar"),
-            SwitchPreference("revanced_hide_channel_guidelines"),
-            SwitchPreference("revanced_hide_channel_member_shelf"),
             SwitchPreference("revanced_hide_channel_watermark"),
-            SwitchPreference("revanced_hide_community_guidelines"),
             SwitchPreference("revanced_hide_emergency_box"),
             SwitchPreference("revanced_hide_info_panels"),
             SwitchPreference("revanced_hide_join_membership_button"),
@@ -205,8 +201,19 @@ val hideLayoutComponentsPatch = bytecodePatch(
                 key = "revanced_hide_filter_bar_screen",
                 preferences = setOf(
                     SwitchPreference("revanced_hide_filter_bar_feed_in_feed"),
-                    SwitchPreference("revanced_hide_filter_bar_feed_in_search"),
                     SwitchPreference("revanced_hide_filter_bar_feed_in_related_videos"),
+                    SwitchPreference("revanced_hide_filter_bar_feed_in_search"),
+                    SwitchPreference("revanced_hide_filter_bar_feed_in_history"),
+                ),
+            ),
+            PreferenceScreenPreference(
+                key = "revanced_channel_screen",
+                preferences = setOf(
+                    SwitchPreference("revanced_hide_for_you_shelf"),
+                    SwitchPreference("revanced_hide_links_preview"),
+                    SwitchPreference("revanced_hide_members_shelf"),
+                    SwitchPreference("revanced_hide_visit_community_button"),
+                    SwitchPreference("revanced_hide_visit_store_button"),
                 ),
             ),
             SwitchPreference("revanced_hide_album_cards"),
@@ -215,19 +222,19 @@ val hideLayoutComponentsPatch = bytecodePatch(
             SwitchPreference("revanced_hide_compact_banner"),
             SwitchPreference("revanced_hide_crowdfunding_box"),
             SwitchPreference("revanced_hide_chips_shelf"),
-            SwitchPreference("revanced_hide_expandable_chip"),
-            SwitchPreference("revanced_hide_feed_survey"),
+            SwitchPreference("revanced_hide_expandable_card"),
             SwitchPreference("revanced_hide_floating_microphone_button"),
-            SwitchPreference("revanced_hide_for_you_shelf"),
             SwitchPreference("revanced_hide_horizontal_shelves"),
             SwitchPreference("revanced_hide_image_shelf"),
-            SwitchPreference("revanced_hide_latest_posts_ads"),
+            SwitchPreference("revanced_hide_latest_posts"),
             SwitchPreference("revanced_hide_mix_playlists"),
             SwitchPreference("revanced_hide_movies_section"),
             SwitchPreference("revanced_hide_notify_me_button"),
             SwitchPreference("revanced_hide_playables"),
-            SwitchPreference("revanced_hide_search_result_recommendations"),
             SwitchPreference("revanced_hide_show_more_button"),
+            SwitchPreference("revanced_hide_surveys"),
+            SwitchPreference("revanced_hide_ticket_shelf"),
+            SwitchPreference("revanced_hide_video_recommendation_labels"),
             SwitchPreference("revanced_hide_doodles"),
         )
 
@@ -237,7 +244,6 @@ val hideLayoutComponentsPatch = bytecodePatch(
                 sorting = PreferenceScreenPreference.Sorting.UNSORTED,
                 preferences = setOf(
                     SwitchPreference("revanced_custom_filter"),
-                    // TODO: This should be a dynamic ListPreference, which does not exist yet
                     TextPreference("revanced_custom_filter_strings", inputType = InputType.TEXT_MULTI_LINE),
                 ),
             ),
@@ -251,20 +257,20 @@ val hideLayoutComponentsPatch = bytecodePatch(
 
         // region Mix playlists
 
-        (if (is_20_07_or_greater) parseElementFromBufferFingerprint
-        else parseElementFromBufferLegacyFingerprint).let {
+        (if (is_20_09_or_greater) parseElementFromBufferFingerprint
+        else if (is_20_07_or_greater) parseElementFromBufferLegacy2007Fingerprint
+        else parseElementFromBufferLegacy1901Fingerprint).let {
             it.method.apply {
-                // Target code is a mess with a lot of register moves.
-                // There is no simple way to find a free register for all versions so this is hard coded.
-                val freeRegister = if (is_19_47_or_greater) 6 else 0
                 val byteArrayParameter = "p3"
                 val startIndex = it.patternMatch!!.startIndex
                 val conversionContextRegister = getInstruction<TwoRegisterInstruction>(startIndex).registerA
                 val returnEmptyComponentInstruction = instructions.last { it.opcode == Opcode.INVOKE_STATIC }
                 val returnEmptyComponentRegister = (returnEmptyComponentInstruction as FiveRegisterInstruction).registerC
+                val insertIndex = startIndex + 1
+                val freeRegister = findFreeRegister(insertIndex, conversionContextRegister, returnEmptyComponentRegister)
 
                 addInstructionsWithLabels(
-                    startIndex + 1,
+                    insertIndex,
                     """
                         invoke-static { v$conversionContextRegister, $byteArrayParameter }, $LAYOUT_COMPONENTS_FILTER_CLASS_DESCRIPTOR->filterMixPlaylists(Ljava/lang/Object;[B)Z
                         move-result v$freeRegister 
@@ -272,7 +278,7 @@ val hideLayoutComponentsPatch = bytecodePatch(
                         move-object v$returnEmptyComponentRegister, p1   # Required for 19.47
                         goto :return_empty_component
                         :show
-                        const/4 v$freeRegister, 0x0   # Restore register, required for 19.16
+                        nop
                     """,
                     ExternalLabel("return_empty_component", returnEmptyComponentInstruction),
                 )
@@ -374,16 +380,13 @@ val hideLayoutComponentsPatch = bytecodePatch(
             findInstructionIndicesReversedOrThrow {
                 getReference<MethodReference>()?.name == "setImageDrawable"
             }.forEach { insertIndex ->
-                val register = getInstruction<FiveRegisterInstruction>(insertIndex).registerD
+                val drawableRegister = getInstruction<FiveRegisterInstruction>(insertIndex).registerD
+                val imageViewRegister = getInstruction<FiveRegisterInstruction>(insertIndex).registerC
 
-                addInstructionsWithLabels(
+                replaceInstruction(
                     insertIndex,
-                    """
-                        invoke-static { v$register }, $LAYOUT_COMPONENTS_FILTER_CLASS_DESCRIPTOR->hideYoodles(Landroid/graphics/drawable/Drawable;)Landroid/graphics/drawable/Drawable;
-                        move-result-object v$register
-                        if-eqz v$register, :hide
-                    """,
-                    ExternalLabel("hide", getInstruction(insertIndex + 1)),
+                    "invoke-static { v$imageViewRegister, v$drawableRegister }, $LAYOUT_COMPONENTS_FILTER_CLASS_DESCRIPTOR->" +
+                            "setDoodleDrawable(Landroid/widget/ImageView;Landroid/graphics/drawable/Drawable;)V"
                 )
             }
         }

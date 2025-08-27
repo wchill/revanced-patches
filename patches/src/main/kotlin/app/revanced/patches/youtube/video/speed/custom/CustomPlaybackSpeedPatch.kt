@@ -17,7 +17,6 @@ import app.revanced.patches.shared.misc.mapping.resourceMappings
 import app.revanced.patches.shared.misc.settings.preference.InputType
 import app.revanced.patches.shared.misc.settings.preference.SwitchPreference
 import app.revanced.patches.shared.misc.settings.preference.TextPreference
-import app.revanced.patches.youtube.interaction.seekbar.disableFastForwardNoticeFingerprint
 import app.revanced.patches.youtube.misc.extension.sharedExtensionPatch
 import app.revanced.patches.youtube.misc.litho.filter.addLithoFilter
 import app.revanced.patches.youtube.misc.litho.filter.lithoFilterPatch
@@ -27,13 +26,22 @@ import app.revanced.patches.youtube.misc.recyclerviewtree.hook.addRecyclerViewTr
 import app.revanced.patches.youtube.misc.recyclerviewtree.hook.recyclerViewTreeHookPatch
 import app.revanced.patches.youtube.misc.settings.settingsPatch
 import app.revanced.patches.youtube.video.speed.settingsMenuVideoSpeedGroup
-import app.revanced.util.*
+import app.revanced.util.getReference
+import app.revanced.util.indexOfFirstInstructionOrThrow
+import app.revanced.util.indexOfFirstLiteralInstruction
+import app.revanced.util.indexOfFirstLiteralInstructionOrThrow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
+
+private const val FILTER_CLASS_DESCRIPTOR =
+    "Lapp/revanced/extension/youtube/patches/components/PlaybackSpeedMenuFilter;"
+
+internal const val EXTENSION_CLASS_DESCRIPTOR =
+    "Lapp/revanced/extension/youtube/patches/playback/speed/CustomPlaybackSpeedPatch;"
 
 internal var speedUnavailableId = -1L
     private set
@@ -42,18 +50,9 @@ private val customPlaybackSpeedResourcePatch = resourcePatch {
     dependsOn(resourceMappingPatch)
 
     execute {
-        speedUnavailableId = resourceMappings[
-            "string",
-            "varispeed_unavailable_message",
-        ]
+        speedUnavailableId = resourceMappings["string", "varispeed_unavailable_message"]
     }
 }
-
-private const val FILTER_CLASS_DESCRIPTOR =
-    "Lapp/revanced/extension/youtube/patches/components/PlaybackSpeedMenuFilterPatch;"
-
-private const val EXTENSION_CLASS_DESCRIPTOR =
-    "Lapp/revanced/extension/youtube/patches/playback/speed/CustomPlaybackSpeedPatch;"
 
 internal val customPlaybackSpeedPatch = bytecodePatch(
     description = "Adds custom playback speed options.",
@@ -74,6 +73,7 @@ internal val customPlaybackSpeedPatch = bytecodePatch(
         settingsMenuVideoSpeedGroup.addAll(
             listOf(
                 SwitchPreference("revanced_custom_speed_menu"),
+                SwitchPreference("revanced_restore_old_speed_menu"),
                 TextPreference(
                     "revanced_custom_playback_speeds",
                     inputType = InputType.TEXT_MULTI_LINE
@@ -87,7 +87,25 @@ internal val customPlaybackSpeedPatch = bytecodePatch(
             )
         }
 
+        // Override the min/max speeds that can be used.
+        speedLimiterFingerprint.method.apply {
+            val limitMinIndex = indexOfFirstLiteralInstructionOrThrow(0.25f)
+            var limitMaxIndex = indexOfFirstLiteralInstruction(2.0f)
+            // Newer targets have 4x max speed.
+            if (limitMaxIndex < 0) {
+                limitMaxIndex = indexOfFirstLiteralInstructionOrThrow(4.0f)
+            }
+
+            val limitMinRegister = getInstruction<OneRegisterInstruction>(limitMinIndex).registerA
+            val limitMaxRegister = getInstruction<OneRegisterInstruction>(limitMaxIndex).registerA
+
+            replaceInstruction(limitMinIndex, "const/high16 v$limitMinRegister, 0.0f")
+            replaceInstruction(limitMaxIndex, "const/high16 v$limitMaxRegister, 8.0f")
+        }
+
+
         // Replace the speeds float array with custom speeds.
+        // These speeds are used if the speed menu is immediately opened after a video is opened.
         speedArrayGeneratorFingerprint.method.apply {
             val sizeCallIndex = indexOfFirstInstructionOrThrow { getReference<MethodReference>()?.name == "size" }
             val sizeCallResultRegister = getInstruction<OneRegisterInstruction>(sizeCallIndex + 1).registerA
@@ -119,21 +137,7 @@ internal val customPlaybackSpeedPatch = bytecodePatch(
             )
         }
 
-        // Override the min/max speeds that can be used.
-        speedLimiterFingerprint.method.apply {
-            val limitMinIndex = indexOfFirstLiteralInstructionOrThrow(0.25f.toRawBits().toLong())
-            var limitMaxIndex = indexOfFirstLiteralInstruction(2.0f.toRawBits().toLong())
-            // Newer targets have 4x max speed.
-            if (limitMaxIndex < 0) {
-                limitMaxIndex = indexOfFirstLiteralInstructionOrThrow(4.0f.toRawBits().toLong())
-            }
-
-            val limitMinRegister = getInstruction<OneRegisterInstruction>(limitMinIndex).registerA
-            val limitMaxRegister = getInstruction<OneRegisterInstruction>(limitMaxIndex).registerA
-
-            replaceInstruction(limitMinIndex, "const/high16 v$limitMinRegister, 0.0f")
-            replaceInstruction(limitMaxIndex, "const/high16 v$limitMaxRegister, 8.0f")
-        }
+        // region Force old video quality menu.
 
         // Add a static INSTANCE field to the class.
         // This is later used to call "showOldPlaybackSpeedMenu" on the instance.
@@ -157,7 +161,7 @@ internal val customPlaybackSpeedPatch = bytecodePatch(
         // This is later called on the field INSTANCE.
         val showOldPlaybackSpeedMenuMethod = showOldPlaybackSpeedMenuFingerprint.match(
             getOldPlaybackSpeedsFingerprint.classDef,
-        ).method.toString()
+        ).method
 
         // Insert the call to the "showOldPlaybackSpeedMenu" method on the field INSTANCE.
         showOldPlaybackSpeedMenuExtensionFingerprint.method.apply {
@@ -169,20 +173,17 @@ internal val customPlaybackSpeedPatch = bytecodePatch(
                     return-void
                     :not_null
                     invoke-virtual { v0 }, $showOldPlaybackSpeedMenuMethod
-                """,
+                """
             )
         }
 
-        // region Force old video quality menu.
-        // This is necessary, because there is no known way of adding custom playback speeds to the new menu.
+        // endregion
 
+        // Close the unpatched playback dialog and show the modern custom dialog.
         addRecyclerViewTreeHook(EXTENSION_CLASS_DESCRIPTOR)
 
         // Required to check if the playback speed menu is currently shown.
         addLithoFilter(FILTER_CLASS_DESCRIPTOR)
-
-        // endregion
-
 
         // region Custom tap and hold 2x speed.
 

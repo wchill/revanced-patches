@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import app.revanced.extension.shared.Logger;
+import app.revanced.extension.shared.settings.BaseSettings;
 import app.revanced.extension.youtube.StringTrieSearch;
 import app.revanced.extension.youtube.settings.Settings;
 
@@ -16,29 +17,28 @@ public final class LithoFilterPatch {
      * Simple wrapper to pass the litho parameters through the prefix search.
      */
     private static final class LithoFilterParameters {
-        @Nullable
         final String identifier;
         final String path;
-        final byte[] protoBuffer;
+        final byte[] buffer;
 
-        LithoFilterParameters(@Nullable String lithoIdentifier, String lithoPath, byte[] protoBuffer) {
+        LithoFilterParameters(String lithoIdentifier, String lithoPath, byte[] buffer) {
             this.identifier = lithoIdentifier;
             this.path = lithoPath;
-            this.protoBuffer = protoBuffer;
+            this.buffer = buffer;
         }
 
         @NonNull
         @Override
         public String toString() {
             // Estimate the percentage of the buffer that are Strings.
-            StringBuilder builder = new StringBuilder(Math.max(100, protoBuffer.length / 2));
+            StringBuilder builder = new StringBuilder(Math.max(100, buffer.length / 2));
             builder.append( "ID: ");
             builder.append(identifier);
             builder.append(" Path: ");
             builder.append(path);
             if (Settings.DEBUG_PROTOBUFFER.get()) {
                 builder.append(" BufferStrings: ");
-                findAsciiStrings(builder, protoBuffer);
+                findAsciiStrings(builder, buffer);
             }
 
             return builder.toString();
@@ -47,7 +47,7 @@ public final class LithoFilterPatch {
         /**
          * Search through a byte array for all ASCII strings.
          */
-        private static void findAsciiStrings(StringBuilder builder, byte[] buffer) {
+        static void findAsciiStrings(StringBuilder builder, byte[] buffer) {
             // Valid ASCII values (ignore control characters).
             final int minimumAscii = 32;  // 32 = space character
             final int maximumAscii = 126; // 127 = delete character
@@ -73,8 +73,29 @@ public final class LithoFilterPatch {
         }
     }
 
+    /**
+     * Litho layout fixed thread pool size override.
+     * <p>
+     * Unpatched YouTube uses a layout fixed thread pool between 1 and 3 threads:
+     * <pre>
+     * 1 thread - > Device has less than 6 cores
+     * 2 threads -> Device has over 6 cores and less than 6GB of memory
+     * 3 threads -> Device has over 6 cores and more than 6GB of memory
+     * </pre>
+     *
+     * Using more than 1 thread causes layout issues such as the You tab watch/playlist shelf
+     * that is sometimes incorrectly hidden (ReVanced is not hiding it), and seems to
+     * fix a race issue if using the active navigation tab status with litho filtering.
+     */
+    private static final int LITHO_LAYOUT_THREAD_POOL_SIZE = 1;
+
+    /**
+     * Placeholder for actual filters.
+     */
+    private static final class DummyFilter extends Filter { }
+
     private static final Filter[] filters = new Filter[] {
-            new DummyFilter() // Replaced by patch.
+            new DummyFilter() // Replaced patching, do not touch.
     };
 
     private static final StringTrieSearch pathSearchTree = new StringTrieSearch();
@@ -86,7 +107,7 @@ public final class LithoFilterPatch {
      * Because litho filtering is multi-threaded and the buffer is passed in from a different injection point,
      * the buffer is saved to a ThreadLocal so each calling thread does not interfere with other threads.
      */
-    private static final ThreadLocal<ByteBuffer> bufferThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<byte[]> bufferThreadLocal = new ThreadLocal<>();
 
     static {
         for (Filter filter : filters) {
@@ -106,16 +127,33 @@ public final class LithoFilterPatch {
     private static void filterUsingCallbacks(StringTrieSearch pathSearchTree,
                                              Filter filter, List<StringFilterGroup> groups,
                                              Filter.FilterContentType type) {
+        String filterSimpleName = filter.getClass().getSimpleName();
+
         for (StringFilterGroup group : groups) {
             if (!group.includeInSearch()) {
                 continue;
             }
+
             for (String pattern : group.filters) {
-                pathSearchTree.addPattern(pattern, (textSearched, matchedStartIndex, matchedLength, callbackParameter) -> {
+                pathSearchTree.addPattern(pattern, (textSearched, matchedStartIndex,
+                                                    matchedLength, callbackParameter) -> {
                             if (!group.isEnabled()) return false;
+
                             LithoFilterParameters parameters = (LithoFilterParameters) callbackParameter;
-                            return filter.isFiltered(parameters.identifier, parameters.path, parameters.protoBuffer,
-                                    group, type, matchedStartIndex);
+                            final boolean isFiltered = filter.isFiltered(parameters.identifier,
+                                    parameters.path, parameters.buffer, group, type, matchedStartIndex);
+
+                            if (isFiltered && BaseSettings.DEBUG.get()) {
+                                if (type == Filter.FilterContentType.IDENTIFIER) {
+                                    Logger.printDebug(() -> "Filtered " + filterSimpleName
+                                            + " identifier: " + parameters.identifier);
+                                } else {
+                                    Logger.printDebug(() -> "Filtered " + filterSimpleName
+                                            + " path: " + parameters.path);
+                                }
+                            }
+
+                            return isFiltered;
                         }
                 );
             }
@@ -124,50 +162,55 @@ public final class LithoFilterPatch {
 
     /**
      * Injection point.  Called off the main thread.
+     * Targets 20.22+
      */
-    @SuppressWarnings("unused")
-    public static void setProtoBuffer(@Nullable ByteBuffer protobufBuffer) {
+    public static void setProtoBuffer(byte[] buffer) {
         // Set the buffer to a thread local.  The buffer will remain in memory, even after the call to #filter completes.
         // This is intentional, as it appears the buffer can be set once and then filtered multiple times.
         // The buffer will be cleared from memory after a new buffer is set by the same thread,
         // or when the calling thread eventually dies.
-        if (protobufBuffer == null) {
+        bufferThreadLocal.set(buffer);
+    }
+
+    /**
+     * Injection point.  Called off the main thread.
+     * Targets 20.21 and lower.
+     */
+    public static void setProtoBuffer(@Nullable ByteBuffer buffer) {
+        // Set the buffer to a thread local.  The buffer will remain in memory, even after the call to #filter completes.
+        // This is intentional, as it appears the buffer can be set once and then filtered multiple times.
+        // The buffer will be cleared from memory after a new buffer is set by the same thread,
+        // or when the calling thread eventually dies.
+        if (buffer == null || !buffer.hasArray()) {
             // It appears the buffer can be cleared out just before the call to #filter()
             // Ignore this null value and retain the last buffer that was set.
-            Logger.printDebug(() -> "Ignoring null protobuffer");
+            Logger.printDebug(() -> "Ignoring null or empty buffer: " + buffer);
         } else {
-            bufferThreadLocal.set(protobufBuffer);
+            setProtoBuffer(buffer.array());
         }
     }
 
     /**
-     * Injection point.  Called off the main thread, and commonly called by multiple threads at the same time.
+     * Injection point.
      */
-    @SuppressWarnings("unused")
-    public static boolean filter(@Nullable String lithoIdentifier, @NonNull StringBuilder pathBuilder) {
+    public static boolean isFiltered(String lithoIdentifier, StringBuilder pathBuilder) {
         try {
-            if (pathBuilder.length() == 0) {
+            if (lithoIdentifier.isEmpty() && pathBuilder.length() == 0) {
                 return false;
             }
 
-            ByteBuffer protobufBuffer = bufferThreadLocal.get();
-            final byte[] bufferArray;
+            byte[] buffer = bufferThreadLocal.get();
             // Potentially the buffer may have been null or never set up until now.
             // Use an empty buffer so the litho id/path filters still work correctly.
-            if (protobufBuffer == null) {
-                bufferArray = EMPTY_BYTE_ARRAY;
-            } else if (!protobufBuffer.hasArray()) {
-                Logger.printDebug(() -> "Proto buffer does not have an array, using an empty buffer array");
-                bufferArray = EMPTY_BYTE_ARRAY;
-            } else {
-                bufferArray = protobufBuffer.array();
+            if (buffer == null) {
+                buffer = EMPTY_BYTE_ARRAY;
             }
 
-            LithoFilterParameters parameter = new LithoFilterParameters(lithoIdentifier,
-                    pathBuilder.toString(), bufferArray);
+            LithoFilterParameters parameter = new LithoFilterParameters(
+                    lithoIdentifier, pathBuilder.toString(), buffer);
             Logger.printDebug(() -> "Searching " + parameter);
 
-            if (parameter.identifier != null && identifierSearchTree.matches(parameter.identifier, parameter)) {
+            if (identifierSearchTree.matches(parameter.identifier, parameter)) {
                 return true;
             }
 
@@ -175,14 +218,33 @@ public final class LithoFilterPatch {
                 return true;
             }
         } catch (Exception ex) {
-            Logger.printException(() -> "Litho filter failure", ex);
+            Logger.printException(() -> "isFiltered failure", ex);
         }
 
         return false;
     }
-}
 
-/**
- * Placeholder for actual filters.
- */
-final class DummyFilter extends Filter { }
+    /**
+     * Injection point.
+     */
+    public static int getExecutorCorePoolSize(int originalCorePoolSize) {
+        if (originalCorePoolSize != LITHO_LAYOUT_THREAD_POOL_SIZE) {
+            Logger.printDebug(() -> "Overriding core thread pool size from: " + originalCorePoolSize
+                    + " to: " + LITHO_LAYOUT_THREAD_POOL_SIZE);
+        }
+
+        return LITHO_LAYOUT_THREAD_POOL_SIZE;
+    }
+
+    /**
+     * Injection point.
+     */
+    public static int getExecutorMaxThreads(int originalMaxThreads) {
+        if (originalMaxThreads != LITHO_LAYOUT_THREAD_POOL_SIZE) {
+            Logger.printDebug(() -> "Overriding max thread pool size from: " + originalMaxThreads
+                    + " to: " + LITHO_LAYOUT_THREAD_POOL_SIZE);
+        }
+
+        return LITHO_LAYOUT_THREAD_POOL_SIZE;
+    }
+}

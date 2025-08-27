@@ -58,13 +58,13 @@ val spoofAppVersionPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -72,7 +72,7 @@ val spoofAppVersionPatch = bytecodePatch(
 
         PreferenceScreen.GENERAL_LAYOUT.addPreferences(
             // Group the switch and list preference together, since General menu is sorted by name
-            // and the preferences can be scattered apart with non English langauges.
+            // and the preferences can be scattered apart with non English languages.
             PreferenceCategory(
                 titleKey = null,
                 sorting = Sorting.UNSORTED,
@@ -82,7 +82,7 @@ val spoofAppVersionPatch = bytecodePatch(
                     if (is_19_43_or_greater) {
                         ListPreference(
                             key = "revanced_spoof_app_version_target",
-                            summaryKey = null,
+                            summaryKey = null
                         )
                     } else {
                         ListPreference(
@@ -121,16 +121,17 @@ val spoofAppVersionPatch = bytecodePatch(
             )
         }
 
-        val insertIndex = spoofAppVersionFingerprint.patternMatch!!.startIndex + 1
-        val buildOverrideNameRegister =
-            spoofAppVersionFingerprint.method.getInstruction<OneRegisterInstruction>(insertIndex - 1).registerA
+        spoofAppVersionFingerprint.apply {
+            val startIndex = patternMatch!!.startIndex
+            val buildOverrideNameRegister = method.getInstruction<OneRegisterInstruction>(startIndex).registerA
 
-        spoofAppVersionFingerprint.method.addInstructions(
-            insertIndex,
-            """
-                invoke-static {v$buildOverrideNameRegister}, $EXTENSION_CLASS_DESCRIPTOR->getYouTubeVersionOverride(Ljava/lang/String;)Ljava/lang/String;
-                move-result-object v$buildOverrideNameRegister
-            """
-        )
+            method.addInstructions(
+                startIndex + 1,
+                """
+                    invoke-static {v$buildOverrideNameRegister}, $EXTENSION_CLASS_DESCRIPTOR->getYouTubeVersionOverride(Ljava/lang/String;)Ljava/lang/String;
+                    move-result-object v$buildOverrideNameRegister
+                """
+            )
+        }
     }
 }

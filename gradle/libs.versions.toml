@@ -1,5 +1,4 @@
 [versions]
-desugar_jdk_libs = "2.1.5"
 revanced-patcher = "21.0.0"
 # Tracking https://github.com/google/smali/issues/64.
 #noinspection GradleDependency
@@ -9,17 +8,29 @@ smali = "3.0.5"
 agp = "8.2.2"
 annotation = "1.9.1"
 appcompat = "1.7.0"
+desugar_jdk_libs = "2.1.5"
 okhttp = "5.0.0-alpha.14"
 retrofit = "2.11.0"
 guava = "33.4.0-jre"
+protobuf-javalite = "4.31.1"
+protoc = "4.31.1"
+protobuf = "0.9.5"
+antlr4 = "4.13.2"
+nanohttpd = "2.3.1"
+apksig = "8.10.1"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf-javalite" }
+protobuf-protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "apksig" }
 
 jackson-databind-boost = { module = "com.fasterxml.jackson.core:jackson-databind", version = "2.6.0" }
 jraw-boost = { module = "com.github.wchill:JRAW", version = "454a2f9" }
@@ -27,7 +38,8 @@ slf4j-boost = { module = "org.slf4j:slf4j-api", version = "1.7.13" }
 guava-boost = { module = "com.google.guava:guava", version = "19.0" }
 
 [plugins]
-android-library = { id = "com.android.library", version.ref = "agp" }
+android-library = { id = "com.android.library" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
 
 [bundles]
 boost = ["jackson-databind-boost", "jraw-boost", "guava-boost", "okhttp", "slf4j-boost"]

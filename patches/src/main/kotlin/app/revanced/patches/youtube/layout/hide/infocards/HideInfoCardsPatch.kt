@@ -57,13 +57,13 @@ val hideInfoCardsPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -99,7 +99,7 @@ val hideInfoCardsPatch = bytecodePatch(
         )
 
         // Info cards can also appear as Litho components.
-        val filterClassDescriptor = "Lapp/revanced/extension/youtube/patches/components/HideInfoCardsFilterPatch;"
+        val filterClassDescriptor = "Lapp/revanced/extension/youtube/patches/components/HideInfoCardsFilter;"
         addLithoFilter(filterClassDescriptor)
     }
 }

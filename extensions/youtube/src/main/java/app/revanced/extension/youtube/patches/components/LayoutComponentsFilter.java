@@ -4,12 +4,14 @@ import static app.revanced.extension.youtube.shared.NavigationBar.NavigationButt
 
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 
 import app.revanced.extension.shared.Logger;
 import app.revanced.extension.shared.Utils;
 import app.revanced.extension.youtube.StringTrieSearch;
+import app.revanced.extension.youtube.patches.ChangeHeaderPatch;
 import app.revanced.extension.youtube.settings.Settings;
 import app.revanced.extension.youtube.shared.NavigationBar;
 import app.revanced.extension.youtube.shared.PlayerType;
@@ -30,16 +32,19 @@ public final class LayoutComponentsFilter extends Filter {
     );
 
     private final StringTrieSearch exceptions = new StringTrieSearch();
-    private final StringFilterGroup inFeedSurvey;
+    private final StringFilterGroup communityPosts;
+    private final StringFilterGroup surveys;
     private final StringFilterGroup notifyMe;
     private final StringFilterGroup singleItemInformationPanel;
     private final StringFilterGroup expandableMetadata;
-    private final ByteArrayFilterGroup searchResultRecommendations;
-    private final StringFilterGroup searchResultVideo;
     private final StringFilterGroup compactChannelBarInner;
     private final StringFilterGroup compactChannelBarInnerButton;
     private final ByteArrayFilterGroup joinMembershipButton;
     private final StringFilterGroup horizontalShelves;
+    private final ByteArrayFilterGroup ticketShelf;
+    private final StringFilterGroup chipBar;
+    private final StringFilterGroup channelProfile;
+    private final ByteArrayFilterGroupList channelProfileBuffer;
 
     public LayoutComponentsFilter() {
         exceptions.addPatterns(
@@ -64,7 +69,7 @@ public final class LayoutComponentsFilter extends Filter {
 
         // Paths.
 
-        final var communityPosts = new StringFilterGroup(
+        communityPosts = new StringFilterGroup(
                 Settings.HIDE_COMMUNITY_POSTS,
                 "post_base_wrapper", // may be obsolete and no longer needed.
                 "text_post_root.eml",
@@ -75,12 +80,10 @@ public final class LayoutComponentsFilter extends Filter {
                 "post_base_wrapper_slim.eml",
                 "poll_post_root.eml",
                 "videos_post_root.eml",
-                "post_shelf_slim.eml"
-        );
-
-        final var communityGuidelines = new StringFilterGroup(
-                Settings.HIDE_COMMUNITY_GUIDELINES,
-                "community_guidelines"
+                "post_shelf_slim.eml",
+                "videos_post_responsive_root.eml",
+                "text_post_responsive_root.eml",
+                "poll_post_responsive_root.eml"
         );
 
         final var subscribersCommunityGuidelines = new StringFilterGroup(
@@ -88,8 +91,8 @@ public final class LayoutComponentsFilter extends Filter {
                 "sponsorships_comments_upsell"
         );
 
-        final var channelMemberShelf = new StringFilterGroup(
-                Settings.HIDE_CHANNEL_MEMBER_SHELF,
+        final var channelMembersShelf = new StringFilterGroup(
+                Settings.HIDE_MEMBERS_SHELF,
                 "member_recognition_shelf"
         );
 
@@ -103,8 +106,13 @@ public final class LayoutComponentsFilter extends Filter {
                 "subscriptions_chip_bar"
         );
 
-        inFeedSurvey = new StringFilterGroup(
-                Settings.HIDE_FEED_SURVEY,
+        chipBar = new StringFilterGroup(
+                Settings.HIDE_FILTER_BAR_FEED_IN_HISTORY,
+                "chip_bar"
+        );
+
+        surveys = new StringFilterGroup(
+                Settings.HIDE_SURVEYS,
                 "in_feed_survey",
                 "slimline_survey",
                 "feed_nudge"
@@ -131,13 +139,13 @@ public final class LayoutComponentsFilter extends Filter {
         );
 
         final var latestPosts = new StringFilterGroup(
-                Settings.HIDE_HIDE_LATEST_POSTS,
+                Settings.HIDE_LATEST_POSTS,
                 "post_shelf"
         );
 
-        final var channelGuidelines = new StringFilterGroup(
-                Settings.HIDE_HIDE_CHANNEL_GUIDELINES,
-                "channel_guidelines_entry_banner"
+        final var channelLinksPreview = new StringFilterGroup(
+                Settings.HIDE_LINKS_PREVIEW,
+                "attribution.eml"
         );
 
         final var emergencyBox = new StringFilterGroup(
@@ -162,7 +170,7 @@ public final class LayoutComponentsFilter extends Filter {
         );
 
         expandableMetadata = new StringFilterGroup(
-                Settings.HIDE_EXPANDABLE_CHIP,
+                Settings.HIDE_EXPANDABLE_CARD,
                 "inline_expander"
         );
 
@@ -192,7 +200,6 @@ public final class LayoutComponentsFilter extends Filter {
                 "image_shelf"
         );
 
-
         final var timedReactions = new StringFilterGroup(
                 Settings.HIDE_TIMED_REACTIONS,
                 "emoji_control_panel",
@@ -211,14 +218,13 @@ public final class LayoutComponentsFilter extends Filter {
 
         compactChannelBarInnerButton = new StringFilterGroup(
                 null,
-                "|button.eml|"
+                "|button.eml"
         );
 
         joinMembershipButton = new ByteArrayFilterGroup(
                 null,
                 "sponsorships"
         );
-
 
         final var channelWatermark = new StringFilterGroup(
                 Settings.HIDE_VIDEO_CHANNEL_WATERMARK,
@@ -230,14 +236,25 @@ public final class LayoutComponentsFilter extends Filter {
                 "mixed_content_shelf"
         );
 
-        searchResultVideo = new StringFilterGroup(
-                Settings.HIDE_SEARCH_RESULT_RECOMMENDATIONS,
-                "search_video_with_context.eml"
+        final var videoRecommendationLabels = new StringFilterGroup(
+                Settings.HIDE_VIDEO_RECOMMENDATION_LABELS,
+                "endorsement_header_footer.eml"
         );
 
-        searchResultRecommendations = new ByteArrayFilterGroup(
-                Settings.HIDE_SEARCH_RESULT_RECOMMENDATIONS,
-                "endorsement_header_footer"
+        channelProfile = new StringFilterGroup(
+                null,
+                "channel_profile.eml",
+                "page_header.eml"
+        );
+        channelProfileBuffer = new ByteArrayFilterGroupList();
+        channelProfileBuffer.addAll(new ByteArrayFilterGroup(
+                        Settings.HIDE_VISIT_STORE_BUTTON,
+                        "header_store_button"
+                ),
+                new ByteArrayFilterGroup(
+                        Settings.HIDE_VISIT_COMMUNITY_BUTTON,
+                        "community_button"
+                )
         );
 
         horizontalShelves = new StringFilterGroup(
@@ -248,41 +265,47 @@ public final class LayoutComponentsFilter extends Filter {
                 "horizontal_tile_shelf.eml"
         );
 
+        ticketShelf = new ByteArrayFilterGroup(
+                Settings.HIDE_TICKET_SHELF,
+                "ticket_item.eml"
+        );
+
         addPathCallbacks(
-                expandableMetadata,
-                inFeedSurvey,
-                notifyMe,
-                compactChannelBar,
-                communityPosts,
-                paidPromotion,
-                searchResultVideo,
-                latestPosts,
+                artistCard,
+                audioTrackButton,
+                channelLinksPreview,
+                channelMembersShelf,
+                channelProfile,
                 channelWatermark,
-                communityGuidelines,
+                chipBar,
+                compactBanner,
+                compactChannelBar,
+                compactChannelBarInner,
+                communityPosts,
+                emergencyBox,
+                expandableMetadata,
+                forYouShelf,
+                horizontalShelves,
+                imageShelf,
+                infoPanel,
+                latestPosts,
+                medicalPanel,
+                notifyMe,
+                paidPromotion,
                 playables,
                 quickActions,
                 relatedVideos,
-                compactBanner,
-                compactChannelBarInner,
-                medicalPanel,
-                infoPanel,
                 singleItemInformationPanel,
-                emergencyBox,
                 subscribersCommunityGuidelines,
                 subscriptionsChipBar,
-                channelGuidelines,
-                audioTrackButton,
-                artistCard,
+                surveys,
                 timedReactions,
-                imageShelf,
-                channelMemberShelf,
-                forYouShelf,
-                horizontalShelves
+                videoRecommendationLabels
         );
     }
 
     @Override
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
         // This identifier is used not only in players but also in search results:
         // https://github.com/ReVanced/revanced-patches/issues/3245
@@ -290,57 +313,50 @@ public final class LayoutComponentsFilter extends Filter {
         // From 2025, the medical information panel is no longer shown in the search results.
         // Therefore, this identifier does not filter when the search bar is activated.
         if (matchedGroup == singleItemInformationPanel) {
-            if (PlayerType.getCurrent().isMaximizedOrFullscreen() || !NavigationBar.isSearchBarActive()) {
-                return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-
-            return false;
-        }
-
-        if (matchedGroup == searchResultVideo) {
-            if (searchResultRecommendations.check(protobufBufferArray).isFiltered()) {
-                return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-            return false;
+            return PlayerType.getCurrent().isMaximizedOrFullscreen() || !NavigationBar.isSearchBarActive();
         }
 
         // The groups are excluded from the filter due to the exceptions list below.
         // Filter them separately here.
-        if (matchedGroup == notifyMe || matchedGroup == inFeedSurvey || matchedGroup == expandableMetadata)
-        {
-            return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
+        if (matchedGroup == notifyMe || matchedGroup == surveys || matchedGroup == expandableMetadata) {
+            return true;
+        }
+
+        if (matchedGroup == channelProfile) {
+            return channelProfileBuffer.check(buffer).isFiltered();
+        }
+
+        if (matchedGroup == communityPosts && NavigationBar.isBackButtonVisible()) {
+            // Allow community posts on channel profile page,
+            // or if viewing an individual channel in the feed.
+            return false;
         }
 
         if (exceptions.matches(path)) return false; // Exceptions are not filtered.
 
         if (matchedGroup == compactChannelBarInner) {
-            if (compactChannelBarInnerButton.check(path).isFiltered()) {
-                // The filter may be broad, but in the context of a compactChannelBarInnerButton,
-                // it's safe to assume that the button is the only thing that should be hidden.
-                if (joinMembershipButton.check(protobufBufferArray).isFiltered()) {
-                    return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-                }
-            }
-
-            return false;
+            return compactChannelBarInnerButton.check(path).isFiltered()
+                    // The filter may be broad, but in the context of a compactChannelBarInnerButton,
+                    // it's safe to assume that the button is the only thing that should be hidden.
+                    && joinMembershipButton.check(buffer).isFiltered();
         }
 
         if (matchedGroup == horizontalShelves) {
-            if (contentIndex == 0 && hideShelves()) {
-                return super.isFiltered(path, identifier, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-
-            return false;
+            return contentIndex == 0 && (hideShelves() || ticketShelf.check(buffer).isFiltered());
         }
 
-        return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
+        if (matchedGroup == chipBar) {
+            return contentIndex == 0 && NavigationButton.getSelectedNavigationButton() == NavigationButton.LIBRARY;
+        }
+
+        return true;
     }
 
     /**
      * Injection point.
      * Called from a different place then the other filters.
      */
-    public static boolean filterMixPlaylists(final Object conversionContext, @Nullable final byte[] bytes) {
+    public static boolean filterMixPlaylists(Object conversionContext, @Nullable final byte[] bytes) {
         try {
             if (!Settings.HIDE_MIX_PLAYLISTS.get()) {
                 return false;
@@ -430,13 +446,11 @@ public final class LayoutComponentsFilter extends Filter {
     /**
      * Injection point.
      */
-    @Nullable
-    public static Drawable hideYoodles(Drawable animatedYoodle) {
-        if (HIDE_DOODLES_ENABLED) {
-            return null;
-        }
-
-        return animatedYoodle;
+    public static void setDoodleDrawable(ImageView imageView, Drawable original) {
+        Drawable replacement = HIDE_DOODLES_ENABLED
+                ? ChangeHeaderPatch.getDrawable(original)
+                : original;
+        imageView.setImageDrawable(replacement);
     }
 
     private static final boolean HIDE_SHOW_MORE_BUTTON_ENABLED = Settings.HIDE_SHOW_MORE_BUTTON.get();
@@ -454,16 +468,20 @@ public final class LayoutComponentsFilter extends Filter {
     }
 
     private static boolean hideShelves() {
-        // If the player is opened while library is selected,
-        // then filter any recommendations below the player.
-        if (PlayerType.getCurrent().isMaximizedOrFullscreen()
-                // Or if the search is active while library is selected, then also filter.
-                || NavigationBar.isSearchBarActive()) {
+        // Horizontal shelves are used for music/game links in video descriptions,
+        // such as https://youtube.com/watch?v=W8kI1na3S2M
+        if (PlayerType.getCurrent().isMaximizedOrFullscreen()) {
+            return false;
+        }
+
+        // Must check search bar after player type, since search results
+        // can be in the background behind an open player.
+        if (NavigationBar.isSearchBarActive()) {
             return true;
         }
 
         // Do not hide if the navigation back button is visible,
-        // otherwise the content shelves in the YouTube Movie/Courses pages is hidden.
+        // otherwise the content shelves in the explore/music/courses pages are hidden.
         if (NavigationBar.isBackButtonVisible()) {
             return false;
         }

@@ -19,10 +19,17 @@ abstract class BasePreference(
     val key: String? = null,
     val titleKey: String? = "${key}_title",
     val summaryKey: String? = "${key}_summary",
-    val icon: String? = null,
-    val layout: String? = null,
+    icon: String? = null,
+    layout: String? = null,
     val tag: String
 ) {
+
+    var icon: String? = icon
+        internal set
+
+    var layout: String? = layout
+        internal set
+
     /**
      * Serialize preference element to XML.
      * Overriding methods should invoke super and operate on its return value.
@@ -43,26 +50,6 @@ abstract class BasePreference(
             }
             layout?.let { setAttribute("android:layout", layout) }
         }
-
-    override fun hashCode(): Int {
-        var result = key?.hashCode() ?: 0
-        result = 31 * result + titleKey.hashCode()
-        result = 31 * result + tag.hashCode()
-        return result
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as BasePreference
-
-        if (key != other.key) return false
-        if (titleKey != other.titleKey) return false
-        if (tag != other.tag) return false
-
-        return true
-    }
 
     companion object {
         fun Element.addSummary(summaryKey: String, summaryType: SummaryType = SummaryType.DEFAULT) =

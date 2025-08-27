@@ -7,8 +7,9 @@ import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patcher.util.proxy.mutableTypes.MutableClass
 import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod
 import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
+import app.revanced.patcher.util.smali.toInstructions
 import app.revanced.patches.youtube.misc.extension.sharedExtensionPatch
-import app.revanced.patches.youtube.shared.newVideoQualityChangedFingerprint
+import app.revanced.patches.youtube.shared.videoQualityChangedFingerprint
 import app.revanced.patches.youtube.video.playerresponse.Hook
 import app.revanced.patches.youtube.video.playerresponse.addPlayerResponseMethodHook
 import app.revanced.patches.youtube.video.playerresponse.playerResponseMethodHookPatch
@@ -16,6 +17,8 @@ import app.revanced.patches.youtube.video.videoid.hookBackgroundPlayVideoId
 import app.revanced.patches.youtube.video.videoid.hookPlayerResponseVideoId
 import app.revanced.patches.youtube.video.videoid.hookVideoId
 import app.revanced.patches.youtube.video.videoid.videoIdPatch
+import app.revanced.util.addInstructionsAtControlFlowLabel
+import app.revanced.util.addStaticFieldToExtension
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -29,12 +32,15 @@ import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import com.android.tools.smali.dexlib2.util.MethodUtil
 
 private const val EXTENSION_CLASS_DESCRIPTOR = "Lapp/revanced/extension/youtube/patches/VideoInformation;"
 private const val EXTENSION_PLAYER_INTERFACE =
-    "Lapp/revanced/extension/youtube/patches/VideoInformation${'$'}PlaybackController;"
+    "Lapp/revanced/extension/youtube/patches/VideoInformation\$PlaybackController;"
+private const val EXTENSION_VIDEO_QUALITY_MENU_INTERFACE =
+    "Lapp/revanced/extension/youtube/patches/VideoInformation\$VideoQualityMenuInterface;"
 
 private lateinit var playerInitMethod: MutableMethod
 private var playerInitInsertIndex = -1
@@ -79,7 +85,6 @@ val videoInformationPatch = bytecodePatch(
     )
 
     execute {
-
         playerInitMethod = playerInitFingerprint.classDef.methods.first { MethodUtil.isConstructor(it) }
 
         // Find the location of the first invoke-direct call and extract the register storing the 'this' object reference.
@@ -88,9 +93,6 @@ val videoInformationPatch = bytecodePatch(
         }
         playerInitInsertRegister = playerInitMethod.getInstruction<FiveRegisterInstruction>(initThisIndex).registerC
         playerInitInsertIndex = initThisIndex + 1
-
-        // Hook the player controller for use through the extension.
-        onCreateHook(EXTENSION_CLASS_DESCRIPTOR, "initialize")
 
         val seekFingerprintResultMethod = seekFingerprint.match(playerInitFingerprint.originalClassDef).method
         val seekRelativeFingerprintResultMethod =
@@ -189,11 +191,77 @@ val videoInformationPatch = bytecodePatch(
                 proxy(classes.first { it.type == setPlaybackSpeedMethodReference.definingClass })
                     .mutableClass.methods.first { it.name == setPlaybackSpeedMethodReference.name }
             setPlaybackSpeedMethodIndex = 0
+
+            // Add override playback speed method.
+            onPlaybackSpeedItemClickFingerprint.classDef.methods.add(
+                ImmutableMethod(
+                    definingClass,
+                    "overridePlaybackSpeed",
+                    listOf(ImmutableMethodParameter("F", annotations, null)),
+                    "V",
+                    AccessFlags.PUBLIC.value or AccessFlags.PUBLIC.value,
+                    annotations,
+                    null,
+                    ImmutableMethodImplementation(
+                        4,
+                        """
+                            # Check if the playback speed is not auto (-2.0f)
+                            const/4 v0, 0x0
+                            cmpg-float v0, v3, v0
+                            if-lez v0, :ignore
+                            
+                            # Get the container class field.
+                            iget-object v0, v2, $setPlaybackSpeedContainerClassFieldReference  
+
+                            # For some reason, in YouTube 19.44.39 this value is sometimes null.
+                            if-eqz v0, :ignore
+
+                            # Get the field from its class.
+                            iget-object v1, v0, $setPlaybackSpeedClassFieldReference
+                            
+                            # Invoke setPlaybackSpeed on that class.
+                            invoke-virtual {v1, v3}, $setPlaybackSpeedMethodReference
+
+                            :ignore
+                            return-void
+                        """.toInstructions(), null, null
+                    )
+                ).toMutable()
+            )
+        }
+
+        playbackSpeedClassFingerprint.method.apply {
+            val index = indexOfFirstInstructionOrThrow(Opcode.RETURN_OBJECT)
+            val register = getInstruction<OneRegisterInstruction>(index).registerA
+            val playbackSpeedClass = this.returnType
+
+            // Set playback speed class.
+            addInstructionsAtControlFlowLabel(
+                index,
+                "sput-object v$register, $EXTENSION_CLASS_DESCRIPTOR->playbackSpeedClass:$playbackSpeedClass"
+            )
+
+            val smaliInstructions =
+                """
+                    if-eqz v0, :ignore
+                    invoke-virtual {v0, p0}, $playbackSpeedClass->overridePlaybackSpeed(F)V
+                    return-void
+                    :ignore
+                    nop
+                """
+
+            addStaticFieldToExtension(
+                EXTENSION_CLASS_DESCRIPTOR,
+                "overridePlaybackSpeed",
+                "playbackSpeedClass",
+                playbackSpeedClass,
+                smaliInstructions
+            )
         }
 
         // Handle new playback speed menu.
         playbackSpeedMenuSpeedChangedFingerprint.match(
-            newVideoQualityChangedFingerprint.originalClassDef,
+            videoQualityChangedFingerprint.originalClassDef,
         ).method.apply {
             val index = indexOfFirstInstructionOrThrow(Opcode.IGET)
 
@@ -202,6 +270,131 @@ val videoInformationPatch = bytecodePatch(
             speedSelectionValueRegister = getInstruction<TwoRegisterInstruction>(index).registerA
         }
 
+        videoQualityFingerprint.let {
+            // Fix bad data used by YouTube.
+            it.method.addInstructions(
+                0,
+                """
+                    invoke-static { p2, p1 }, $EXTENSION_CLASS_DESCRIPTOR->fixVideoQualityResolution(Ljava/lang/String;I)I    
+                    move-result p1
+                """
+            )
+
+            // Add methods to access obfuscated quality fields.
+            it.classDef.apply {
+                methods.add(
+                    ImmutableMethod(
+                        type,
+                        "patch_getQualityName",
+                        listOf(),
+                        "Ljava/lang/String;",
+                        AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+                        null,
+                        null,
+                        MutableMethodImplementation(2),
+                    ).toMutable().apply {
+                        // Only one string field.
+                        val qualityNameField = fields.single { field ->
+                            field.type == "Ljava/lang/String;"
+                        }
+
+                        addInstructions(
+                            0,
+                            """
+                                iget-object v0, p0, $qualityNameField
+                                return-object v0
+                            """
+                        )
+                    }
+                )
+
+                methods.add(
+                    ImmutableMethod(
+                        type,
+                        "patch_getResolution",
+                        listOf(),
+                        "I",
+                        AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+                        null,
+                        null,
+                        MutableMethodImplementation(2),
+                    ).toMutable().apply {
+                        val resolutionField = fields.single { field ->
+                            field.type == "I"
+                        }
+
+                        addInstructions(
+                            0,
+                            """
+                                iget v0, p0, $resolutionField
+                                return v0
+                            """
+                        )
+                    }
+                )
+            }
+        }
+
+        // Detect video quality changes and override the current quality.
+        setVideoQualityFingerprint.match(
+            videoQualitySetterFingerprint.originalClassDef
+        ).let { match ->
+            // This instruction refers to the field with the type that contains the setQuality method.
+            val onItemClickListenerClassReference = match.method
+                .getInstruction<ReferenceInstruction>(0).reference
+            val setQualityFieldReference = match.method
+                .getInstruction<ReferenceInstruction>(1).reference as FieldReference
+
+            proxy(
+                classes.find { classDef ->
+                    classDef.type == setQualityFieldReference.type
+                }!!
+            ).mutableClass.apply {
+                // Add interface and helper methods to allow extension code to call obfuscated methods.
+                interfaces.add(EXTENSION_VIDEO_QUALITY_MENU_INTERFACE)
+
+                methods.add(
+                    ImmutableMethod(
+                        type,
+                        "patch_setQuality",
+                        listOf(
+                            ImmutableMethodParameter(YOUTUBE_VIDEO_QUALITY_CLASS_TYPE, null, null)
+                        ),
+                        "V",
+                        AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+                        null,
+                        null,
+                        MutableMethodImplementation(2),
+                    ).toMutable().apply {
+                        val setQualityMenuIndexMethod = methods.single { method ->
+                            method.parameterTypes.firstOrNull() == YOUTUBE_VIDEO_QUALITY_CLASS_TYPE
+                        }
+
+                        addInstructions(
+                            0,
+                            """
+                                invoke-virtual { p0, p1 }, $setQualityMenuIndexMethod
+                                return-void
+                            """
+                        )
+                    }
+                )
+            }
+
+            videoQualitySetterFingerprint.method.addInstructions(
+                0,
+                """
+                    # Get object instance to invoke setQuality method.
+                    iget-object v0, p0, $onItemClickListenerClassReference
+                    iget-object v0, v0, $setQualityFieldReference
+                    
+                    invoke-static { p1, v0, p2 }, $EXTENSION_CLASS_DESCRIPTOR->setVideoQuality([$YOUTUBE_VIDEO_QUALITY_CLASS_TYPE${EXTENSION_VIDEO_QUALITY_MENU_INTERFACE}I)I
+                    move-result p2
+                """
+            )
+        }
+
+        onCreateHook(EXTENSION_CLASS_DESCRIPTOR, "initialize")
         videoSpeedChangedHook(EXTENSION_CLASS_DESCRIPTOR, "videoSpeedChanged")
         userSelectedPlaybackSpeedHook(EXTENSION_CLASS_DESCRIPTOR, "userSelectedPlaybackSpeed")
     }
@@ -212,8 +405,8 @@ private fun addSeekInterfaceMethods(targetClass: MutableClass, seekToMethod: Met
     targetClass.interfaces.add(EXTENSION_PLAYER_INTERFACE)
 
     arrayOf(
-        Triple(seekToMethod, "seekTo", true),
-        Triple(seekToRelativeMethod, "seekToRelative", false),
+        Triple(seekToMethod, "patch_seekTo", true),
+        Triple(seekToRelativeMethod, "patch_seekToRelative", false),
     ).forEach { (method, name, returnsBoolean) ->
         // Add interface method.
         // Get enum type for the seek helper method.

@@ -5,6 +5,7 @@ import app.revanced.patcher.extensions.InstructionExtensions.getInstruction
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patches.all.misc.resources.addResources
 import app.revanced.patches.all.misc.resources.addResourcesPatch
+import app.revanced.patches.shared.misc.settings.preference.NonInteractivePreference
 import app.revanced.patches.shared.misc.settings.preference.PreferenceScreenPreference
 import app.revanced.patches.shared.misc.settings.preference.PreferenceScreenPreference.Sorting
 import app.revanced.patches.shared.misc.settings.preference.SwitchPreference
@@ -23,7 +24,7 @@ private const val EXTENSION_CLASS_DESCRIPTOR =
 
 val enableDebuggingPatch = bytecodePatch(
     name = "Enable debugging",
-    description = "Adds options for debugging.",
+    description = "Adds options for debugging and exporting ReVanced logs to the clipboard.",
 ) {
     dependsOn(
         sharedExtensionPatch,
@@ -34,13 +35,13 @@ val enableDebuggingPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -55,6 +56,16 @@ val enableDebuggingPatch = bytecodePatch(
                     SwitchPreference("revanced_debug_protobuffer"),
                     SwitchPreference("revanced_debug_stacktrace"),
                     SwitchPreference("revanced_debug_toast_on_error"),
+                    NonInteractivePreference(
+                        "revanced_debug_export_logs_to_clipboard",
+                        tag = "app.revanced.extension.youtube.settings.preference.ExportLogToClipboardPreference",
+                        selectable = true,
+                    ),
+                    NonInteractivePreference(
+                        "revanced_debug_logs_clear_buffer",
+                        tag = "app.revanced.extension.youtube.settings.preference.ClearLogBufferPreference",
+                        selectable = true,
+                    ),
                 ),
             ),
         )
@@ -106,7 +117,6 @@ val enableDebuggingPatch = bytecodePatch(
                     return-wide v0
                 """
             )
-
         }
 
         experimentalStringFeatureFlagFingerprint.match(

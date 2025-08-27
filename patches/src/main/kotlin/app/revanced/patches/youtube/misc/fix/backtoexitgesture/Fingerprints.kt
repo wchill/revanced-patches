@@ -4,17 +4,6 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.AccessFlags
 import app.revanced.patcher.fingerprint
 
-internal val onBackPressedFingerprint = fingerprint {
-    returns("V")
-    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
-    opcodes(Opcode.RETURN_VOID)
-    custom { method, classDef ->
-        method.name == "onBackPressed" &&
-            // Old versions of YouTube called this class "WatchWhileActivity" instead.
-            (classDef.endsWith("MainActivity;") || classDef.endsWith("WatchWhileActivity;"))
-    }
-}
-
 internal val scrollPositionFingerprint = fingerprint {
     accessFlags(AccessFlags.PROTECTED, AccessFlags.FINAL)
     returns("V")
@@ -27,6 +16,9 @@ internal val scrollPositionFingerprint = fingerprint {
     strings("scroll_position")
 }
 
+/**
+ * Resolves using class found in [recyclerViewTopScrollingParentFingerprint].
+ */
 internal val recyclerViewTopScrollingFingerprint = fingerprint {
     accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
     returns("V")

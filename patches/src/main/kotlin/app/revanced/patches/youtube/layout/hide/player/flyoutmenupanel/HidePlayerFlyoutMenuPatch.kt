@@ -24,13 +24,13 @@ val hidePlayerFlyoutMenuPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -51,9 +51,13 @@ val hidePlayerFlyoutMenuPatch = bytecodePatch(
                     SwitchPreference("revanced_hide_player_flyout_speed"),
                     SwitchPreference("revanced_hide_player_flyout_lock_screen"),
                     SwitchPreference("revanced_hide_player_flyout_more_info"),
-                    SwitchPreference("revanced_hide_player_flyout_audio_track"),
+                    SwitchPreference(
+                        key = "revanced_hide_player_flyout_audio_track",
+                        tag = "app.revanced.extension.youtube.settings.preference.HideAudioFlyoutMenuPreference"
+                    ),
                     SwitchPreference("revanced_hide_player_flyout_watch_in_vr"),
                     SwitchPreference("revanced_hide_player_flyout_sleep_timer"),
+                    SwitchPreference("revanced_hide_player_flyout_video_quality"),
                     SwitchPreference("revanced_hide_player_flyout_video_quality_footer"),
                 ),
             ),

@@ -10,13 +10,6 @@ internal val lithoThemeFingerprint = fingerprint {
     returns("V")
     parameters("Landroid/graphics/Rect;")
     opcodes(
-        Opcode.APUT,
-        Opcode.NEW_INSTANCE,
-        Opcode.INVOKE_DIRECT,
-        Opcode.IGET_OBJECT,
-        Opcode.SGET_OBJECT,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.IPUT_OBJECT,
         Opcode.IGET,
         Opcode.IF_EQZ,
         Opcode.INVOKE_VIRTUAL,
@@ -31,26 +24,19 @@ internal val lithoThemeFingerprint = fingerprint {
     }
 }
 
-internal val themeHelperDarkColorFingerprint = fingerprint {
-    accessFlags(AccessFlags.PRIVATE, AccessFlags.STATIC)
-    returns("Ljava/lang/String;")
-    parameters()
-    custom { method, _ ->
-        method.name == "darkThemeResourceName" &&
-            method.definingClass == "Lapp/revanced/extension/youtube/ThemeHelper;"
-    }
-}
-
-internal val themeHelperLightColorFingerprint = fingerprint {
-    accessFlags(AccessFlags.PRIVATE, AccessFlags.STATIC)
-    returns("Ljava/lang/String;")
-    parameters()
-    custom { method, _ ->
-        method.name == "lightThemeResourceName" &&
-            method.definingClass == "Lapp/revanced/extension/youtube/ThemeHelper;"
-    }
-}
+internal const val GRADIENT_LOADING_SCREEN_AB_CONSTANT = 45412406L
 
 internal val useGradientLoadingScreenFingerprint = fingerprint {
     literal { GRADIENT_LOADING_SCREEN_AB_CONSTANT }
+}
+
+internal const val SPLASH_SCREEN_STYLE_FEATURE_FLAG = 269032877L
+
+internal val splashScreenStyleFingerprint = fingerprint {
+    returns("V")
+    parameters("Landroid/os/Bundle;")
+    literal { SPLASH_SCREEN_STYLE_FEATURE_FLAG }
+    custom { method, classDef ->
+        method.name == "onCreate" && classDef.endsWith("/MainActivity;")
+    }
 }

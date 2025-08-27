@@ -1,27 +1,26 @@
 package app.revanced.patches.youtube.misc.litho.filter
 
 import app.revanced.patcher.fingerprint
+import app.revanced.util.containsLiteralInstruction
 import app.revanced.util.literal
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 
-/**
- * In 19.17 and earlier, this resolves to the same method as [readComponentIdentifierFingerprint].
- * In 19.18+ this resolves to a different method.
- */
 internal val componentContextParserFingerprint = fingerprint {
+    strings("Number of bits must be positive")
+}
+
+internal val componentCreateFingerprint = fingerprint {
     strings(
-        "TreeNode result must be set.",
-        // String is a partial match and changed slightly in 20.03+
-        "it was removed due to duplicate converter bindings."
+        "Element missing correct type extension",
+        "Element missing type"
     )
 }
 
 internal val lithoFilterFingerprint = fingerprint {
     accessFlags(AccessFlags.STATIC, AccessFlags.CONSTRUCTOR)
-    returns("V")
     custom { _, classDef ->
-        classDef.endsWith("LithoFilterPatch;")
+        classDef.endsWith("/LithoFilterPatch;")
     }
 }
 
@@ -37,20 +36,21 @@ internal val protobufBufferReferenceFingerprint = fingerprint {
     )
 }
 
-/**
-* In 19.17 and earlier, this resolves to the same method as [componentContextParserFingerprint].
-* In 19.18+ this resolves to a different method.
-*/
-internal val readComponentIdentifierFingerprint = fingerprint {
-    strings("Number of bits must be positive")
-}
-
 internal val emptyComponentFingerprint = fingerprint {
     accessFlags(AccessFlags.PRIVATE, AccessFlags.CONSTRUCTOR)
     parameters()
     strings("EmptyComponent")
     custom { _, classDef ->
         classDef.methods.filter { AccessFlags.STATIC.isSet(it.accessFlags) }.size == 1
+    }
+}
+
+internal val lithoThreadExecutorFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR)
+    parameters("I", "I", "I")
+    custom { method, classDef ->
+        classDef.superclass == "Ljava/util/concurrent/ThreadPoolExecutor;" &&
+                method.containsLiteralInstruction(1L) // 1L = default thread timeout.
     }
 }
 

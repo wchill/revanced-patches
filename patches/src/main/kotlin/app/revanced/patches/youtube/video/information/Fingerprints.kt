@@ -1,7 +1,7 @@
 package app.revanced.patches.youtube.video.information
 
 import app.revanced.patcher.fingerprint
-import app.revanced.patches.youtube.shared.newVideoQualityChangedFingerprint
+import app.revanced.patches.youtube.shared.videoQualityChangedFingerprint
 import app.revanced.util.getReference
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -110,23 +110,69 @@ internal val seekRelativeFingerprint = fingerprint {
 }
 
 /**
- * Resolves with the class found in [newVideoQualityChangedFingerprint].
+ * Resolves with the class found in [videoQualityChangedFingerprint].
  */
 internal val playbackSpeedMenuSpeedChangedFingerprint = fingerprint {
     accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
     returns("L")
     parameters("L")
     opcodes(
-        Opcode.IGET_OBJECT,
-        Opcode.INVOKE_INTERFACE,
-        Opcode.MOVE_RESULT_OBJECT,
-        Opcode.IF_EQZ,
-        Opcode.IGET_OBJECT,
-        Opcode.INVOKE_INTERFACE,
-        Opcode.MOVE_RESULT_OBJECT,
         Opcode.IGET,
         Opcode.INVOKE_VIRTUAL,
         Opcode.SGET_OBJECT,
         Opcode.RETURN_OBJECT,
+    )
+}
+
+internal val playbackSpeedClassFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.STATIC)
+    returns("L")
+    parameters("L")
+    opcodes(
+        Opcode.RETURN_OBJECT
+    )
+    strings("PLAYBACK_RATE_MENU_BOTTOM_SHEET_FRAGMENT")
+}
+
+
+internal const val YOUTUBE_VIDEO_QUALITY_CLASS_TYPE = "Lcom/google/android/libraries/youtube/innertube/model/media/VideoQuality;"
+
+internal val videoQualityFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR)
+    parameters(
+        "I", // Resolution.
+        "Ljava/lang/String;", // Human readable resolution: "480p", "1080p Premium", etc
+        "Z",
+        "L"
+    )
+    custom { _, classDef ->
+        classDef.type == YOUTUBE_VIDEO_QUALITY_CLASS_TYPE
+    }
+}
+
+internal val videoQualitySetterFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
+    returns("V")
+    parameters("[L", "I", "Z")
+    opcodes(
+        Opcode.IF_EQZ,
+        Opcode.INVOKE_VIRTUAL,
+        Opcode.MOVE_RESULT_OBJECT,
+        Opcode.INVOKE_VIRTUAL,
+        Opcode.IPUT_BOOLEAN,
+    )
+    strings("menu_item_video_quality")
+}
+
+/**
+ * Matches with the class found in [videoQualitySetterFingerprint].
+ */
+internal val setVideoQualityFingerprint = fingerprint {
+    returns("V")
+    parameters("L")
+    opcodes(
+        Opcode.IGET_OBJECT,
+        Opcode.IPUT_OBJECT,
+        Opcode.IGET_OBJECT,
     )
 }

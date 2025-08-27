@@ -1,9 +1,8 @@
 package app.revanced.extension.youtube.patches.components;
 
-import androidx.annotation.Nullable;
-
 import app.revanced.extension.youtube.StringTrieSearch;
 import app.revanced.extension.youtube.settings.Settings;
+import app.revanced.extension.youtube.shared.PlayerType;
 
 @SuppressWarnings("unused")
 final class DescriptionComponentsFilter extends Filter {
@@ -14,6 +13,11 @@ final class DescriptionComponentsFilter extends Filter {
 
     private final StringFilterGroup macroMarkersCarousel;
 
+    private final StringFilterGroup horizontalShelf;
+    private final ByteArrayFilterGroup cellVideoAttribute;
+
+    private final StringFilterGroup aiGeneratedVideoSummarySection;
+
     public DescriptionComponentsFilter() {
         exceptions.addPatterns(
                 "compact_channel",
@@ -23,15 +27,19 @@ final class DescriptionComponentsFilter extends Filter {
                 "metadata"
         );
 
-        final StringFilterGroup aiGeneratedVideoSummarySection = new StringFilterGroup(
+        aiGeneratedVideoSummarySection = new StringFilterGroup(
                 Settings.HIDE_AI_GENERATED_VIDEO_SUMMARY_SECTION,
                 "cell_expandable_metadata.eml"
         );
 
+        final StringFilterGroup askSection = new StringFilterGroup(
+                Settings.HIDE_ASK_SECTION,
+                "youchat_entrypoint.eml"
+        );
+
         final StringFilterGroup attributesSection = new StringFilterGroup(
                 Settings.HIDE_ATTRIBUTES_SECTION,
-                "gaming_section",
-                "music_section",
+                // "gaming_section", "music_section"
                 "video_attributes_section"
         );
 
@@ -71,30 +79,48 @@ final class DescriptionComponentsFilter extends Filter {
                 )
         );
 
+        horizontalShelf = new StringFilterGroup(
+                Settings.HIDE_ATTRIBUTES_SECTION,
+                "horizontal_shelf.eml"
+        );
+
+        cellVideoAttribute = new ByteArrayFilterGroup(
+                null,
+                "cell_video_attribute"
+        );
+
         addPathCallbacks(
                 aiGeneratedVideoSummarySection,
+                askSection,
                 attributesSection,
                 infoCardsSection,
+                horizontalShelf,
                 howThisWasMadeSection,
+                macroMarkersCarousel,
                 podcastSection,
-                transcriptSection,
-                macroMarkersCarousel
+                transcriptSection
         );
     }
 
     @Override
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
+
+        if (matchedGroup == aiGeneratedVideoSummarySection) {
+            // Only hide if player is open, in case this component is used somewhere else.
+            return PlayerType.getCurrent().isMaximizedOrFullscreen();
+        }
+
         if (exceptions.matches(path)) return false;
 
         if (matchedGroup == macroMarkersCarousel) {
-            if (contentIndex == 0 && macroMarkersCarouselGroupList.check(protobufBufferArray).isFiltered()) {
-                return super.isFiltered(path, identifier, protobufBufferArray, matchedGroup, contentType, contentIndex);
-            }
-
-            return false;
+            return contentIndex == 0 && macroMarkersCarouselGroupList.check(buffer).isFiltered();
         }
 
-        return super.isFiltered(path, identifier, protobufBufferArray, matchedGroup, contentType, contentIndex);
+        if (matchedGroup == horizontalShelf) {
+            return cellVideoAttribute.check(buffer).isFiltered();
+        }
+
+        return true;
     }
 }

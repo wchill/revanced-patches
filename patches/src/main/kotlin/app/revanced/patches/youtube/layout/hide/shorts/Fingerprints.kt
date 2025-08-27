@@ -25,11 +25,6 @@ internal val shortsBottomBarContainerFingerprint = fingerprint {
     literal { bottomBarContainer }
 }
 
-internal val createShortsButtonsFingerprint = fingerprint {
-    returns("V")
-    literal { reelPlayerRightCellButtonHeight }
-}
-
 internal val renderBottomNavigationBarFingerprint = fingerprint {
     returns("V")
     parameters("Ljava/lang/String;")
@@ -78,4 +73,22 @@ internal val setPivotBarVisibilityFingerprint = fingerprint {
 internal val setPivotBarVisibilityParentFingerprint = fingerprint {
     parameters("Z")
     strings("FEnotifications_inbox")
+}
+
+internal val shortsExperimentalPlayerFeatureFlagFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
+    returns("Z")
+    parameters()
+    literal {
+        45677719L
+    }
+}
+
+internal val renderNextUIFeatureFlagFingerprint = fingerprint {
+    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
+    returns("Z")
+    parameters()
+    literal {
+        45649743L
+    }
 }

@@ -19,13 +19,13 @@ val embeddedAdsPatch = bytecodePatch(
         settingsPatch,
     )
 
-    compatibleWith("tv.twitch.android.app")
+    compatibleWith("tv.twitch.android.app"("16.9.1", "25.3.0"))
 
     execute {
         addResources("twitch", "ad.embedded.embeddedAdsPatch")
 
         PreferenceScreen.ADS.SURESTREAM.addPreferences(
-            ListPreference("revanced_block_embedded_ads", summaryKey = null),
+            ListPreference("revanced_block_embedded_ads"),
         )
 
         // Inject OkHttp3 application interceptor

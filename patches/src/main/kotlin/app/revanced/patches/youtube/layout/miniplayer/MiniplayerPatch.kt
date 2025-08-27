@@ -30,6 +30,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -152,30 +153,13 @@ val miniplayerPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39", // First with modern miniplayers.
-            // 19.17.41 // Works without issues, but no reason to recommend over 19.16.
-            // 19.18.41 // Works without issues, but no reason to recommend over 19.16.
-            // 19.19.39 // Last bug free version with smaller Modern 1 miniplayer, but no reason to recommend over 19.16.
-            // 19.20.35 // Cannot swipe to expand.
-            // 19.21.40 // Cannot swipe to expand.
-            // 19.22.43 // Cannot swipe to expand.
-            // 19.23.40 // First with Modern 1 drag and drop, Cannot swipe to expand.
-            // 19.24.45 // First with larger Modern 1, Cannot swipe to expand.
-            "19.25.37", // First with double tap, last with skip forward/back buttons, last with swipe to expand/close, and last before double tap to expand seems to be required.
-            // 19.26.42 // Modern 1 Pause/play button are always hidden. Unusable.
-            // 19.28.42 // First with custom miniplayer size, screen flickers when swiping to maximize Modern 1. Swipe to close miniplayer is broken.
-            // 19.29.42 // All modern players are broken and ignore tapping the miniplayer video.
-            // 19.30.39 // Modern 3 is less broken when double tap expand is enabled, but cannot swipe to expand when double tap is off.
-            // 19.31.36 // All Modern 1 buttons are missing. Unusable.
-            // 19.32.36 // 19.32+ and beyond all work without issues.
-            // 19.33.35
             "19.34.42",
             "19.43.41",
-            "19.45.38",
-            "19.46.42",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     execute {
@@ -185,23 +169,18 @@ val miniplayerPatch = bytecodePatch(
 
         preferences +=
             if (is_20_03_or_greater) {
-                ListPreference(
-                    "revanced_miniplayer_type",
-                    summaryKey = null,
-                )
+                ListPreference("revanced_miniplayer_type")
             } else if (is_19_43_or_greater) {
                 ListPreference(
-                    "revanced_miniplayer_type",
-                    summaryKey = null,
+                    key = "revanced_miniplayer_type",
                     entriesKey = "revanced_miniplayer_type_legacy_19_43_entries",
-                    entryValuesKey = "revanced_miniplayer_type_legacy_19_43_entry_values",
+                    entryValuesKey = "revanced_miniplayer_type_legacy_19_43_entry_values"
                 )
             } else {
                 ListPreference(
-                    "revanced_miniplayer_type",
-                    summaryKey = null,
+                    key = "revanced_miniplayer_type",
                     entriesKey = "revanced_miniplayer_type_legacy_19_16_entries",
-                    entryValuesKey = "revanced_miniplayer_type_legacy_19_16_entry_values",
+                    entryValuesKey = "revanced_miniplayer_type_legacy_19_16_entry_values"
                 )
             }
 
@@ -281,7 +260,7 @@ val miniplayerPatch = bytecodePatch(
         fun Fingerprint.insertMiniplayerFeatureFlagBooleanOverride(
             literal: Long,
             extensionMethod: String,
-        ) = method.insertFeatureFlagBooleanOverride(
+        ) = method.insertLiteralOverride(
             literal,
             "$EXTENSION_CLASS_DESCRIPTOR->$extensionMethod(Z)Z"
         )
@@ -349,7 +328,12 @@ val miniplayerPatch = bytecodePatch(
         // endregion
 
         // region Legacy tablet miniplayer hooks.
-        val appNameStringIndex = miniplayerOverrideFingerprint.stringMatches!!.first().index + 2
+        val appNameStringIndex = miniplayerOverrideFingerprint.let {
+            it.method.indexOfFirstInstructionOrThrow(it.stringMatches!!.first().index) {
+                val reference = getReference<MethodReference>()
+                reference?.parameterTypes?.firstOrNull() == "Landroid/content/Context;"
+            }
+        }
         navigate(miniplayerOverrideFingerprint.originalMethod).to(appNameStringIndex).stop().apply {
             findReturnIndicesReversed().forEach { index -> insertLegacyTabletMiniplayerOverride(index) }
         }

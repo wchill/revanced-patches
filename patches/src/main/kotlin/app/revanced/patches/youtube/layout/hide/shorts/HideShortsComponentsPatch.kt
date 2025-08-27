@@ -6,7 +6,6 @@ import app.revanced.patcher.extensions.InstructionExtensions.getInstruction
 import app.revanced.patcher.patch.booleanOption
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patcher.patch.resourcePatch
-import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod
 import app.revanced.patches.all.misc.resources.addResources
 import app.revanced.patches.all.misc.resources.addResourcesPatch
 import app.revanced.patches.shared.misc.mapping.get
@@ -19,17 +18,19 @@ import app.revanced.patches.youtube.misc.litho.filter.addLithoFilter
 import app.revanced.patches.youtube.misc.litho.filter.lithoFilterPatch
 import app.revanced.patches.youtube.misc.navigation.navigationBarHookPatch
 import app.revanced.patches.youtube.misc.playservice.is_19_41_or_greater
+import app.revanced.patches.youtube.misc.playservice.is_20_07_or_greater
 import app.revanced.patches.youtube.misc.playservice.versionCheckPatch
 import app.revanced.patches.youtube.misc.settings.PreferenceScreen
 import app.revanced.patches.youtube.misc.settings.settingsPatch
-import app.revanced.util.*
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import app.revanced.util.findElementByAttributeValueOrThrow
+import app.revanced.util.forEachLiteralValueInstruction
+import app.revanced.util.getReference
+import app.revanced.util.indexOfFirstInstructionOrThrow
+import app.revanced.util.indexOfFirstLiteralInstruction
+import app.revanced.util.returnLate
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
-internal var reelPlayerRightCellButtonHeight = -1L
-    private set
 internal var bottomBarContainer = -1L
     private set
 internal var reelPlayerRightPivotV2Size = -1L
@@ -65,8 +66,8 @@ private val hideShortsComponentsResourcePatch = resourcePatch {
 
         PreferenceScreen.SHORTS.addPreferences(
             SwitchPreference("revanced_hide_shorts_home"),
-            SwitchPreference("revanced_hide_shorts_subscriptions"),
             SwitchPreference("revanced_hide_shorts_search"),
+            SwitchPreference("revanced_hide_shorts_subscriptions"),
             SwitchPreference("revanced_hide_shorts_history"),
 
             PreferenceScreenPreference(
@@ -91,11 +92,15 @@ private val hideShortsComponentsResourcePatch = resourcePatch {
                     SwitchPreference("revanced_hide_shorts_paused_overlay_buttons"),
 
                     // Suggested actions.
+                    SwitchPreference("revanced_hide_shorts_preview_comment"),
                     SwitchPreference("revanced_hide_shorts_save_sound_button"),
+                    SwitchPreference("revanced_hide_shorts_use_sound_button"),
                     SwitchPreference("revanced_hide_shorts_use_template_button"),
                     SwitchPreference("revanced_hide_shorts_upcoming_button"),
+                    SwitchPreference("revanced_hide_shorts_effect_button"),
                     SwitchPreference("revanced_hide_shorts_green_screen_button"),
                     SwitchPreference("revanced_hide_shorts_hashtag_button"),
+                    SwitchPreference("revanced_hide_shorts_new_posts_button"),
                     SwitchPreference("revanced_hide_shorts_shop_button"),
                     SwitchPreference("revanced_hide_shorts_tagged_products"),
                     SwitchPreference("revanced_hide_shorts_search_suggestions"),
@@ -137,11 +142,6 @@ private val hideShortsComponentsResourcePatch = resourcePatch {
             }
         }
 
-        reelPlayerRightCellButtonHeight = resourceMappings[
-            "dimen",
-            "reel_player_right_cell_button_height",
-        ]
-
         bottomBarContainer = resourceMappings[
             "id",
             "bottom_bar_container",
@@ -172,28 +172,19 @@ val hideShortsComponentsPatch = bytecodePatch(
 
     compatibleWith(
         "com.google.android.youtube"(
-            "19.16.39",
-            "19.25.37",
             "19.34.42",
             "19.43.41",
             "19.47.53",
             "20.07.39",
-        ),
+            "20.12.46",
+            "20.13.41",
+        )
     )
 
     hideShortsAppShortcutOption()
     hideShortsWidgetOption()
 
     execute {
-        // region Hide the Shorts buttons in older versions of YouTube.
-
-        // Some Shorts buttons are views, hide them by setting their visibility to GONE.
-        ShortsButtons.entries.forEach { button -> button.injectHideCall(createShortsButtonsFingerprint.method) }
-
-        // endregion
-
-        // region Hide the Shorts buttons in newer versions of YouTube.
-
         addLithoFilter(FILTER_CLASS_DESCRIPTOR)
 
         forEachLiteralValueInstruction(
@@ -210,7 +201,7 @@ val hideShortsComponentsPatch = bytecodePatch(
                 """
                     invoke-static { v$sizeRegister }, $FILTER_CLASS_DESCRIPTOR->getSoundButtonSize(I)I
                     move-result v$sizeRegister
-                """,
+                """
             )
         }
 
@@ -260,31 +251,32 @@ val hideShortsComponentsPatch = bytecodePatch(
                 """
                     invoke-static { v$heightRegister }, $FILTER_CLASS_DESCRIPTOR->getNavigationBarHeight(I)I
                     move-result v$heightRegister
-                """,
+                """
             )
         }
 
         // endregion
-    }
-}
 
-private enum class ShortsButtons(private val resourceName: String, private val methodName: String) {
-    LIKE("reel_dyn_like", "hideLikeButton"),
-    DISLIKE("reel_dyn_dislike", "hideDislikeButton"),
-    COMMENTS("reel_dyn_comment", "hideShortsCommentsButton"),
-    REMIX("reel_dyn_remix", "hideShortsRemixButton"),
-    SHARE("reel_dyn_share", "hideShortsShareButton"),
-    ;
+        // region Disable experimental Shorts flags.
 
-    fun injectHideCall(method: MutableMethod) {
-        val referencedIndex = method.indexOfFirstResourceIdOrThrow(resourceName)
+        // Flags might be present in earlier targets, but they are not found in 19.47.53.
+        // If these flags are forced on, the experimental layout is still not used and
+        // it appears the features requires additional server side data to fully use.
+        if (is_20_07_or_greater) {
+            // Experimental Shorts player uses Android native buttons and not Litho,
+            // and the layout is provided by the server.
+            //
+            // Since the buttons are native components and not Litho, it should be possible to
+            // fix the RYD Shorts loading delay by asynchronously loading RYD and updating
+            // the button text after RYD has loaded.
+            shortsExperimentalPlayerFeatureFlagFingerprint.method.returnLate(false)
 
-        val setIdIndex = method.indexOfFirstInstructionOrThrow(referencedIndex) {
-            opcode == Opcode.INVOKE_VIRTUAL && getReference<MethodReference>()?.name == "setId"
+            // Experimental UI renderer must also be disabled since it requires the
+            // experimental Shorts player.  If this is enabled but Shorts player
+            // is disabled then the app crashes when the Shorts player is opened.
+            renderNextUIFeatureFlagFingerprint.method.returnLate(false)
         }
 
-        val viewRegister = method.getInstruction<FiveRegisterInstruction>(setIdIndex).registerC
-
-        method.injectHideViewCall(setIdIndex + 1, viewRegister, FILTER_CLASS_DESCRIPTOR, methodName)
+        // endregion
     }
 }

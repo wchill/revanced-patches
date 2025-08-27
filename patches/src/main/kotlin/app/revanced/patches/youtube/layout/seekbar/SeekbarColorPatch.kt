@@ -1,5 +1,6 @@
 package app.revanced.patches.youtube.layout.seekbar
 
+import app.revanced.patcher.Fingerprint
 import app.revanced.patcher.extensions.InstructionExtensions.addInstruction
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.extensions.InstructionExtensions.getInstruction
@@ -27,9 +28,8 @@ import app.revanced.util.findElementByAttributeValueOrThrow
 import app.revanced.util.findInstructionIndicesReversedOrThrow
 import app.revanced.util.getReference
 import app.revanced.util.indexOfFirstInstructionOrThrow
-import app.revanced.util.indexOfFirstLiteralInstructionOrThrow
 import app.revanced.util.inputStreamFromBundledResource
-import app.revanced.util.insertFeatureFlagBooleanOverride
+import app.revanced.util.insertLiteralOverride
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
@@ -228,16 +228,9 @@ val seekbarColorPatch = bytecodePatch(
 
     execute {
         fun MutableMethod.addColorChangeInstructions(resourceId: Long) {
-            val index = indexOfFirstLiteralInstructionOrThrow(resourceId)
-            val insertIndex = indexOfFirstInstructionOrThrow(index, Opcode.MOVE_RESULT)
-            val register = getInstruction<OneRegisterInstruction>(insertIndex).registerA
-
-            addInstructions(
-                insertIndex + 1,
-                """
-                    invoke-static { v$register }, $EXTENSION_CLASS_DESCRIPTOR->getVideoPlayerSeekbarColor(I)I
-                    move-result v$register
-                """
+            insertLiteralOverride(
+                resourceId,
+                "$EXTENSION_CLASS_DESCRIPTOR->getVideoPlayerSeekbarColor(I)I"
             )
         }
 
@@ -310,14 +303,15 @@ val seekbarColorPatch = bytecodePatch(
             """
         )
 
-        val playerFingerprint =
-            if (is_19_49_or_greater) {
-                playerLinearGradientFingerprint
-            } else if (is_19_46_or_greater) {
-                playerLinearGradientLegacy1946Fingerprint
-            } else {
-                playerLinearGradientLegacy1925Fingerprint
-            }
+        val playerFingerprint: Fingerprint
+        val checkGradientCoordinates: Boolean
+        if (is_19_49_or_greater) {
+            playerFingerprint = playerLinearGradientFingerprint
+            checkGradientCoordinates = true
+        } else {
+            playerFingerprint = playerLinearGradientLegacyFingerprint
+            checkGradientCoordinates = false
+        }
 
         playerFingerprint.let {
             it.method.apply {
@@ -326,10 +320,17 @@ val seekbarColorPatch = bytecodePatch(
 
                 addInstructions(
                     index + 1,
-                    """
-                       invoke-static { v$register }, $EXTENSION_CLASS_DESCRIPTOR->getPlayerLinearGradient([I)[I
-                       move-result-object v$register
-                    """
+                    if (checkGradientCoordinates) {
+                        """
+                           invoke-static { v$register, p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->getPlayerLinearGradient([III)[I
+                           move-result-object v$register
+                        """
+                    } else {
+                        """
+                           invoke-static { v$register }, $EXTENSION_CLASS_DESCRIPTOR->getPlayerLinearGradient([I)[I
+                           move-result-object v$register
+                        """
+                    }
                 )
             }
         }
@@ -345,7 +346,7 @@ val seekbarColorPatch = bytecodePatch(
             launchScreenLayoutTypeFingerprint,
             mainActivityOnCreateFingerprint
         ).forEach { fingerprint ->
-            fingerprint.method.insertFeatureFlagBooleanOverride(
+            fingerprint.method.insertLiteralOverride(
                 launchScreenLayoutTypeLotteFeatureFlag,
                 "$EXTENSION_CLASS_DESCRIPTOR->useLotteLaunchSplashScreen(Z)Z"
             )

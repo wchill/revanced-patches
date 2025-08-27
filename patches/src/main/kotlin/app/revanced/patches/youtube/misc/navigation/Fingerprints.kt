@@ -42,19 +42,6 @@ internal val initializeButtonsFingerprint = fingerprint {
     literal { imageOnlyTabResourceId }
 }
 
-internal val mainActivityOnBackPressedFingerprint = fingerprint {
-    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
-    returns("V")
-    parameters()
-    custom { method, classDef ->
-        val matchesClass = classDef.endsWith("MainActivity;") ||
-            // Old versions of YouTube called this class "WatchWhileActivity" instead.
-            classDef.endsWith("WatchWhileActivity;")
-
-        matchesClass && method.name == "onBackPressed"
-    }
-}
-
 /**
  * Extension method, used for callback into to other patches.
  * Specifically, [navigationButtonsPatch].

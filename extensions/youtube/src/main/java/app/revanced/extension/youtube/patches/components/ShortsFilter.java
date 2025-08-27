@@ -1,11 +1,8 @@
 package app.revanced.extension.youtube.patches.components;
 
-import static app.revanced.extension.shared.Utils.hideViewUnderCondition;
 import static app.revanced.extension.youtube.shared.NavigationBar.NavigationButton;
 
 import android.view.View;
-
-import androidx.annotation.Nullable;
 
 import com.google.android.libraries.youtube.rendering.ui.pivotbar.PivotBar;
 
@@ -14,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import app.revanced.extension.shared.Logger;
-import app.revanced.extension.shared.Utils;
 import app.revanced.extension.youtube.settings.Settings;
 import app.revanced.extension.youtube.shared.NavigationBar;
 import app.revanced.extension.youtube.shared.PlayerType;
@@ -41,8 +37,12 @@ public final class ShortsFilter extends Filter {
 
     private static WeakReference<PivotBar> pivotBarRef = new WeakReference<>(null);
 
-    private final StringFilterGroup shortsCompactFeedVideoPath;
+    private final StringFilterGroup shortsCompactFeedVideo;
     private final ByteArrayFilterGroup shortsCompactFeedVideoBuffer;
+    private final StringFilterGroup useSoundButton;
+    private final ByteArrayFilterGroup useSoundButtonBuffer;
+    private final StringFilterGroup useTemplateButton;
+    private final ByteArrayFilterGroup useTemplateButtonBuffer;
 
     private final StringFilterGroup subscribeButton;
     private final StringFilterGroup joinButton;
@@ -50,10 +50,11 @@ public final class ShortsFilter extends Filter {
     private final StringFilterGroup shelfHeader;
 
     private final StringFilterGroup suggestedAction;
-    private final ByteArrayFilterGroupList suggestedActionsGroupList = new ByteArrayFilterGroupList();
+    private final ByteArrayFilterGroupList suggestedActionsBuffer = new ByteArrayFilterGroupList();
 
-    private final StringFilterGroup actionButton;
-    private final ByteArrayFilterGroupList videoActionButtonGroupList = new ByteArrayFilterGroupList();
+    private final StringFilterGroup shortsActionBar;
+    private final StringFilterGroup videoActionButton;
+    private final ByteArrayFilterGroupList videoActionButtonBuffer = new ByteArrayFilterGroupList();
 
     public ShortsFilter() {
         //
@@ -82,7 +83,7 @@ public final class ShortsFilter extends Filter {
         // Path components.
         //
 
-        shortsCompactFeedVideoPath = new StringFilterGroup(null,
+        shortsCompactFeedVideo = new StringFilterGroup(null,
                 // Shorts that appear in the feed/search when the device is using tablet layout.
                 "compact_video.eml",
                 // 'video_lockup_with_attachment.eml' is shown instead of 'compact_video.eml' for some users
@@ -141,6 +142,18 @@ public final class ShortsFilter extends Filter {
                 "like_fountain.eml"
         );
 
+        StringFilterGroup likeButton = new StringFilterGroup(
+                Settings.HIDE_SHORTS_LIKE_BUTTON,
+                "shorts_like_button.eml",
+                "reel_like_button.eml"
+        );
+
+        StringFilterGroup dislikeButton = new StringFilterGroup(
+                Settings.HIDE_SHORTS_DISLIKE_BUTTON,
+                "shorts_dislike_button.eml",
+                "reel_dislike_button.eml"
+        );
+
         joinButton = new StringFilterGroup(
                 Settings.HIDE_SHORTS_JOIN_BUTTON,
                 "sponsor_button"
@@ -156,9 +169,41 @@ public final class ShortsFilter extends Filter {
                 "reel_player_disclosure.eml"
         );
 
-        actionButton = new StringFilterGroup(
+        shortsActionBar = new StringFilterGroup(
                 null,
-                "shorts_video_action_button.eml"
+                "shorts_action_bar.eml",
+                "reel_action_bar.eml"
+        );
+
+        useSoundButton = new StringFilterGroup(
+                Settings.HIDE_SHORTS_USE_SOUND_BUTTON,
+                // First filter needed for "Use this sound" that can appear when viewing Shorts
+                // through the "Short remixing this video" section.
+                "floating_action_button.eml",
+                // Second filter needed for "Use this sound" that can appear below the video title.
+                REEL_METAPANEL_PATH
+        );
+
+        useSoundButtonBuffer = new ByteArrayFilterGroup(
+                null,
+                "yt_outline_camera_"
+        );
+
+        useTemplateButton = new StringFilterGroup(
+                Settings.HIDE_SHORTS_USE_TEMPLATE_BUTTON,
+                // Second filter needed for "Use this template" that can appear below the video title.
+                REEL_METAPANEL_PATH
+        );
+
+        useTemplateButtonBuffer = new ByteArrayFilterGroup(
+                null,
+                "yt_outline_template_add_"
+        );
+
+        videoActionButton = new StringFilterGroup(
+                null,
+                // Can be simply 'button.eml', 'shorts_video_action_button.eml' or 'reel_action_button.eml'
+                "button.eml"
         );
 
         suggestedAction = new StringFilterGroup(
@@ -167,45 +212,43 @@ public final class ShortsFilter extends Filter {
         );
 
         addPathCallbacks(
-                shortsCompactFeedVideoPath, suggestedAction, actionButton, joinButton, subscribeButton,
-                paidPromotionButton, pausedOverlayButtons, channelBar, fullVideoLinkLabel, videoTitle,
-                reelSoundMetadata, soundButton, infoPanel, stickers, likeFountain
+                shortsCompactFeedVideo, joinButton, subscribeButton, paidPromotionButton,
+                shortsActionBar, suggestedAction, pausedOverlayButtons, channelBar,
+                fullVideoLinkLabel, videoTitle, useSoundButton, reelSoundMetadata, soundButton, infoPanel,
+                stickers, likeFountain, likeButton, dislikeButton
         );
 
         //
-        // Action buttons
+        // All other action buttons.
         //
-        videoActionButtonGroupList.addAll(
-                // This also appears as the path item 'shorts_like_button.eml'
-                new ByteArrayFilterGroup(
-                        Settings.HIDE_SHORTS_LIKE_BUTTON,
-                        "reel_like_button",
-                        "reel_like_toggled_button"
-                ),
-                // This also appears as the path item 'shorts_dislike_button.eml'
-                new ByteArrayFilterGroup(
-                        Settings.HIDE_SHORTS_DISLIKE_BUTTON,
-                        "reel_dislike_button",
-                        "reel_dislike_toggled_button"
-                ),
+        videoActionButtonBuffer.addAll(
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_COMMENTS_BUTTON,
-                        "reel_comment_button"
+                        "reel_comment_button",
+                        "youtube_shorts_comment_outline"
                 ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_SHARE_BUTTON,
-                        "reel_share_button"
+                        "reel_share_button",
+                        "youtube_shorts_share_outline"
                 ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_REMIX_BUTTON,
-                        "reel_remix_button"
+                        "reel_remix_button",
+                        "youtube_shorts_remix_outline"
                 )
         );
 
         //
         // Suggested actions.
         //
-        suggestedActionsGroupList.addAll(
+        suggestedActionsBuffer.addAll(
+                new ByteArrayFilterGroup(
+                        Settings.HIDE_SHORTS_PREVIEW_COMMENT,
+                        // Preview comment that can popup while a Short is playing.
+                        // Uses no bundled icons, and instead the users profile photo is shown.
+                        "shorts-comments-panel"
+                ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_SHOP_BUTTON,
                         "yt_outline_bag_"
@@ -225,10 +268,7 @@ public final class ShortsFilter extends Filter {
                         "yt_outline_bookmark_",
                         // 'Save sound' button. It seems this has been removed and only 'Save music' is used.
                         // Still hide this in case it's still present.
-                        "yt_outline_list_add_",
-                        // 'Use this sound' button. It seems this has been removed and only 'Save music' is used.
-                        // Still hide this in case it's still present.
-                        "yt_outline_camera_"
+                        "yt_outline_list_add_"
                 ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_SEARCH_SUGGESTIONS,
@@ -240,6 +280,7 @@ public final class ShortsFilter extends Filter {
                 ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_USE_TEMPLATE_BUTTON,
+                        //  "Use this template" can appear in two different places.
                         "yt_outline_template_add_"
                 ),
                 new ByteArrayFilterGroup(
@@ -247,8 +288,17 @@ public final class ShortsFilter extends Filter {
                         "yt_outline_bell_"
                 ),
                 new ByteArrayFilterGroup(
+                        Settings.HIDE_SHORTS_EFFECT_BUTTON,
+                        // https://www.gstatic.com/youtube/effects/xeno/arcade/effects/icons/
+                        "/arcade/effects/icons/"
+                ),
+                new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_GREEN_SCREEN_BUTTON,
                         "greenscreen_temp"
+                ),
+                new ByteArrayFilterGroup(
+                        Settings.HIDE_SHORTS_NEW_POSTS_BUTTON,
+                        "yt_outline_box_pencil"
                 ),
                 new ByteArrayFilterGroup(
                         Settings.HIDE_SHORTS_HASHTAG_BUTTON,
@@ -258,7 +308,7 @@ public final class ShortsFilter extends Filter {
     }
 
     private boolean isEverySuggestedActionFilterEnabled() {
-        for (ByteArrayFilterGroup group : suggestedActionsGroupList) {
+        for (ByteArrayFilterGroup group : suggestedActionsBuffer) {
             if (!group.isEnabled()) {
                 return false;
             }
@@ -268,30 +318,31 @@ public final class ShortsFilter extends Filter {
     }
 
     @Override
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
         if (contentType == FilterContentType.PATH) {
             if (matchedGroup == subscribeButton || matchedGroup == joinButton || matchedGroup == paidPromotionButton) {
                 // Selectively filter to avoid false positive filtering of other subscribe/join buttons.
-                if (path.startsWith(REEL_CHANNEL_BAR_PATH) || path.startsWith(REEL_METAPANEL_PATH)) {
-                    return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-                }
-                return false;
+                return path.startsWith(REEL_CHANNEL_BAR_PATH) || path.startsWith(REEL_METAPANEL_PATH);
             }
 
-            if (matchedGroup == shortsCompactFeedVideoPath) {
-                if (shouldHideShortsFeedItems() && shortsCompactFeedVideoBuffer.check(protobufBufferArray).isFiltered()) {
-                    return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-                }
-                return false;
+            if (matchedGroup == useSoundButton) {
+                return useSoundButtonBuffer.check(buffer).isFiltered();
             }
 
-            // Video action buttons (like, dislike, comment, share, remix) have the same path.
-            if (matchedGroup == actionButton) {
-                if (videoActionButtonGroupList.check(protobufBufferArray).isFiltered()) {
-                    return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-                }
-                return false;
+            if (matchedGroup == useTemplateButton) {
+                return useTemplateButtonBuffer.check(buffer).isFiltered();
+            }
+
+            if (matchedGroup == shortsCompactFeedVideo) {
+                return shouldHideShortsFeedItems() && shortsCompactFeedVideoBuffer.check(buffer).isFiltered();
+            }
+
+            // Video action buttons (comment, share, remix) have the same path.
+            // Like and dislike are separate path filters and don't require buffer searching.
+            if (matchedGroup == shortsActionBar) {
+                return videoActionButton.check(path).isFiltered()
+                        && videoActionButtonBuffer.check(buffer).isFiltered();
             }
 
             if (matchedGroup == suggestedAction) {
@@ -299,28 +350,23 @@ public final class ShortsFilter extends Filter {
                 // This has a secondary effect of hiding all new un-identified actions
                 // under the assumption that the user wants all suggestions hidden.
                 if (isEverySuggestedActionFilterEnabled()) {
-                    return super.isFiltered(path, identifier, protobufBufferArray, matchedGroup, contentType, contentIndex);
+                    return true;
                 }
 
-                if (suggestedActionsGroupList.check(protobufBufferArray).isFiltered()) {
-                    return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
-                }
-                return false;
+                return suggestedActionsBuffer.check(buffer).isFiltered();
             }
 
-        } else {
-            // Feed/search identifier components.
-            if (matchedGroup == shelfHeader) {
-                // Because the header is used in watch history and possibly other places, check for the index,
-                // which is 0 when the shelf header is used for Shorts.
-                if (contentIndex != 0) return false;
-            }
-
-            if (!shouldHideShortsFeedItems()) return false;
+            return true;
         }
 
-        // Super class handles logging.
-        return super.isFiltered(identifier, path, protobufBufferArray, matchedGroup, contentType, contentIndex);
+        // Feed/search identifier components.
+        if (matchedGroup == shelfHeader) {
+            // Because the header is used in watch history and possibly other places, check for the index,
+            // which is 0 when the shelf header is used for Shorts.
+            if (contentIndex != 0) return false;
+        }
+
+        return shouldHideShortsFeedItems();
     }
 
     private static boolean shouldHideShortsFeedItems() {
@@ -373,17 +419,6 @@ public final class ShortsFilter extends Filter {
         };
     }
 
-    /**
-     * Injection point.  Only used if patching older than 19.03.
-     * This hook may be obsolete even for old versions
-     * as they now use a litho layout like newer versions.
-     */
-    public static void hideShortsShelf(final View shortsShelfView) {
-        if (shouldHideShortsFeedItems()) {
-            Utils.hideViewByLayoutParams(shortsShelfView);
-        }
-    }
-
     public static int getSoundButtonSize(int original) {
         if (Settings.HIDE_SHORTS_SOUND_BUTTON.get()) {
             return 0;
@@ -391,37 +426,6 @@ public final class ShortsFilter extends Filter {
 
         return original;
     }
-
-    // region Hide the buttons in older versions of YouTube. New versions use Litho.
-
-    public static void hideLikeButton(final View likeButtonView) {
-        // Cannot set the visibility to gone for like/dislike,
-        // as some other unknown YT code also sets the visibility after this hook.
-        //
-        // Setting the view to 0dp works, but that leaves a blank space where
-        // the button was (only relevant for dislikes button).
-        //
-        // Instead remove the view from the parent.
-        Utils.hideViewByRemovingFromParentUnderCondition(Settings.HIDE_SHORTS_LIKE_BUTTON, likeButtonView);
-    }
-
-    public static void hideDislikeButton(final View dislikeButtonView) {
-        Utils.hideViewByRemovingFromParentUnderCondition(Settings.HIDE_SHORTS_DISLIKE_BUTTON, dislikeButtonView);
-    }
-
-    public static void hideShortsCommentsButton(final View commentsButtonView) {
-        hideViewUnderCondition(Settings.HIDE_SHORTS_COMMENTS_BUTTON, commentsButtonView);
-    }
-
-    public static void hideShortsRemixButton(final View remixButtonView) {
-        hideViewUnderCondition(Settings.HIDE_SHORTS_REMIX_BUTTON, remixButtonView);
-    }
-
-    public static void hideShortsShareButton(final View shareButtonView) {
-        hideViewUnderCondition(Settings.HIDE_SHORTS_SHARE_BUTTON, shareButtonView);
-    }
-
-    // endregion
 
     public static void setNavigationBar(PivotBar view) {
         pivotBarRef = new WeakReference<>(view);

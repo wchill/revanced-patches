@@ -1,9 +1,7 @@
 package app.revanced.patches.youtube.misc.settings
 
-import app.revanced.patcher.extensions.InstructionExtensions.addInstruction
 import app.revanced.patcher.extensions.InstructionExtensions.addInstructions
 import app.revanced.patcher.extensions.InstructionExtensions.getInstruction
-import app.revanced.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.revanced.patcher.patch.bytecodePatch
 import app.revanced.patcher.patch.resourcePatch
 import app.revanced.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -13,6 +11,7 @@ import app.revanced.patches.all.misc.resources.addResourcesPatch
 import app.revanced.patches.shared.misc.mapping.get
 import app.revanced.patches.shared.misc.mapping.resourceMappingPatch
 import app.revanced.patches.shared.misc.mapping.resourceMappings
+import app.revanced.patches.shared.misc.settings.overrideThemeColors
 import app.revanced.patches.shared.misc.settings.preference.*
 import app.revanced.patches.shared.misc.settings.preference.PreferenceScreenPreference.Sorting
 import app.revanced.patches.shared.misc.settings.settingsPatch
@@ -30,7 +29,9 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import com.android.tools.smali.dexlib2.util.MethodUtil
 
-// Used by a fingerprint() from SettingsPatch.
+private const val EXTENSION_CLASS_DESCRIPTOR =
+    "Lapp/revanced/extension/youtube/settings/LicenseActivityHook;"
+
 internal var appearanceStringId = -1L
     private set
 
@@ -69,12 +70,34 @@ private val settingsResourcePatch = resourcePatch {
     )
 
     execute {
-        // Used for a fingerprint from SettingsPatch.
         appearanceStringId = resourceMappings["string", "app_theme_appearance_dark"]
 
+        // Use same colors as stock YouTube.
+        overrideThemeColors("@color/yt_white1", "@color/yt_black3")
+
         arrayOf(
-            ResourceGroup("drawable", "revanced_settings_icon.xml"),
-            ResourceGroup("layout", "revanced_settings_with_toolbar.xml"),
+            ResourceGroup("drawable",
+                "revanced_settings_icon.xml",
+                "revanced_settings_screen_00_about.xml",
+                "revanced_settings_screen_01_ads.xml",
+                "revanced_settings_screen_02_alt_thumbnails.xml",
+                "revanced_settings_screen_03_feed.xml",
+                "revanced_settings_screen_04_general.xml",
+                "revanced_settings_screen_05_player.xml",
+                "revanced_settings_screen_06_shorts.xml",
+                "revanced_settings_screen_07_seekbar.xml",
+                "revanced_settings_screen_08_swipe_controls.xml",
+                "revanced_settings_screen_09_return_youtube_dislike.xml",
+                "revanced_settings_screen_10_sponsorblock.xml",
+                "revanced_settings_screen_11_misc.xml",
+                "revanced_settings_screen_12_video.xml",
+            ),
+            ResourceGroup("layout",
+                "revanced_preference_with_icon_no_search_result.xml",
+                "revanced_search_suggestion_item.xml",
+                "revanced_settings_with_toolbar.xml"
+            ),
+            ResourceGroup("menu", "revanced_search_menu.xml")
         ).forEach { resourceGroup ->
             copyResources("settings", resourceGroup)
         }
@@ -113,13 +136,22 @@ private val settingsResourcePatch = resourcePatch {
             }
         }
 
-        // Modify the manifest and add a data intent filter to the LicenseActivity.
-        // Some devices freak out if undeclared data is passed to an intent,
-        // and this change appears to fix the issue.
+        // Modify the manifest to enhance LicenseActivity behavior:
+        // 1. Add a data intent filter with MIME type "text/plain".
+        //    Some devices crash if undeclared data is passed to an intent,
+        //    and this change appears to fix the issue.
+        // 2. Add android:configChanges="orientation|screenSize|keyboardHidden".
+        //    This prevents the activity from being recreated on configuration changes
+        //    (e.g., screen rotation), preserving its current state and fragment.
         document("AndroidManifest.xml").use { document ->
             val licenseElement = document.childNodes.findElementByAttributeValueOrThrow(
                 "android:name",
                 "com.google.android.libraries.social.licenses.LicenseActivity",
+            )
+
+            licenseElement.setAttribute(
+                "android:configChanges",
+                "orientation|screenSize|keyboardHidden"
             )
 
             val mimeType = document.createElement("data")
@@ -147,20 +179,16 @@ val settingsPatch = bytecodePatch(
         checkEnvironmentPatch,
     )
 
-    val extensionPackage = "app/revanced/extension/youtube"
-    val activityHookClassDescriptor = "L$extensionPackage/settings/LicenseActivityHook;"
-
-    val themeHelperDescriptor = "L$extensionPackage/ThemeHelper;"
-    val setThemeMethodName = "setTheme"
-
     execute {
         addResources("youtube", "misc.settings.settingsPatch")
 
         // Add an "about" preference to the top.
         preferences += NonInteractivePreference(
             key = "revanced_settings_screen_00_about",
+            icon = "@drawable/revanced_settings_screen_00_about",
+            layout = "@layout/preference_with_icon",
             summaryKey = null,
-            tag = "app.revanced.extension.youtube.settings.preference.ReVancedYouTubeAboutPreference",
+            tag = "app.revanced.extension.shared.settings.preference.ReVancedAboutPreference",
             selectable = true,
         )
 
@@ -169,6 +197,11 @@ val settingsPatch = bytecodePatch(
                 SwitchPreference("revanced_restore_old_settings_menus")
             )
         }
+
+        PreferenceScreen.GENERAL_LAYOUT.addPreferences(
+            SwitchPreference("revanced_settings_search_history"),
+            SwitchPreference("revanced_show_menu_icons")
+        )
 
         PreferenceScreen.MISC.addPreferences(
             TextPreference(
@@ -180,30 +213,10 @@ val settingsPatch = bytecodePatch(
             ),
             ListPreference(
                 key = "revanced_language",
-                summaryKey = null
+                tag = "app.revanced.extension.shared.settings.preference.SortedListPreference"
             )
         )
 
-        setThemeFingerprint.method.let { setThemeMethod ->
-            setThemeMethod.implementation!!.instructions.mapIndexedNotNull { i, instruction ->
-                if (instruction.opcode == Opcode.RETURN_OBJECT) i else null
-            }.asReversed().forEach { returnIndex ->
-                // The following strategy is to replace the return instruction with the setTheme instruction,
-                // then add a return instruction after the setTheme instruction.
-                // This is done because the return instruction is a target of another instruction.
-
-                setThemeMethod.apply {
-                    // This register is returned by the setTheme method.
-                    val register = getInstruction<OneRegisterInstruction>(returnIndex).registerA
-                    replaceInstruction(
-                        returnIndex,
-                        "invoke-static { v$register }, " +
-                            "$themeHelperDescriptor->$setThemeMethodName(Ljava/lang/Enum;)V",
-                    )
-                    addInstruction(returnIndex + 1, "return-object v$register")
-                }
-            }
-        }
 
         // Modify the license activity and remove all existing layout code.
         // Must modify an existing activity and cannot add a new activity to the manifest,
@@ -212,9 +225,9 @@ val settingsPatch = bytecodePatch(
         licenseActivityOnCreateFingerprint.method.addInstructions(
             1,
             """
-                invoke-static { p0 }, $activityHookClassDescriptor->initialize(Landroid/app/Activity;)V
+                invoke-static { p0 }, $EXTENSION_CLASS_DESCRIPTOR->initialize(Landroid/app/Activity;)V
                 return-void
-            """,
+            """
         )
 
         // Remove other methods as they will break as the onCreate method is modified above.
@@ -222,9 +235,9 @@ val settingsPatch = bytecodePatch(
             methods.removeIf { it.name != "onCreate" && !MethodUtil.isConstructor(it) }
         }
 
-        // Add context override to force a specific settings language.
         licenseActivityOnCreateFingerprint.classDef.apply {
-            val attachBaseContext = ImmutableMethod(
+            // Add attachBaseContext method to override the context for setting a specific language.
+            ImmutableMethod(
                 type,
                 "attachBaseContext",
                 listOf(ImmutableMethodParameter("Landroid/content/Context;", null, null)),
@@ -236,21 +249,75 @@ val settingsPatch = bytecodePatch(
             ).toMutable().apply {
                 addInstructions(
                     """
-                        invoke-static { p1 }, $activityHookClassDescriptor->getAttachBaseContext(Landroid/content/Context;)Landroid/content/Context;
+                        invoke-static { p1 }, $EXTENSION_CLASS_DESCRIPTOR->getAttachBaseContext(Landroid/content/Context;)Landroid/content/Context;
                         move-result-object p1
                         invoke-super { p0, p1 }, $superclass->attachBaseContext(Landroid/content/Context;)V
                         return-void
                     """
                 )
-            }
+            }.let(methods::add)
 
-            methods.add(attachBaseContext)
+            // Add onBackPressed method to handle back button presses, delegating to SearchViewController.
+            ImmutableMethod(
+                type,
+                "onBackPressed",
+                emptyList(),
+                "V",
+                AccessFlags.PUBLIC.value,
+                null,
+                null,
+                MutableMethodImplementation(3),
+            ).toMutable().apply {
+                addInstructions(
+                    """
+                        invoke-static {}, Lapp/revanced/extension/youtube/settings/SearchViewController;->handleBackPress()Z
+                        move-result v0
+                        if-nez v0, :search_handled
+                        invoke-virtual { p0 }, Landroid/app/Activity;->finish()V
+                        :search_handled
+                        return-void
+                    """
+                )
+            }.let(methods::add)
+
+            // Add onConfigurationChanged method to handle configuration changes (e.g., screen orientation).
+            ImmutableMethod(
+                type,
+                "onConfigurationChanged",
+                listOf(ImmutableMethodParameter("Landroid/content/res/Configuration;", null, null)),
+                "V",
+                AccessFlags.PUBLIC.value,
+                null,
+                null,
+                MutableMethodImplementation(3)
+            ).toMutable().apply {
+                addInstructions(
+                    """
+                        invoke-super { p0, p1 }, Landroid/app/Activity;->onConfigurationChanged(Landroid/content/res/Configuration;)V
+                        invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleConfigurationChanged(Landroid/app/Activity;Landroid/content/res/Configuration;)V
+                        return-void
+                    """
+                )
+            }.let(methods::add)
+        }
+
+        // Update shared dark mode status based on YT theme.
+        // This is needed because YT allows forcing light/dark mode
+        // which then differs from the system dark mode status.
+        setThemeFingerprint.method.apply {
+            findInstructionIndicesReversedOrThrow(Opcode.RETURN_OBJECT).forEach { index ->
+                val register = getInstruction<OneRegisterInstruction>(index).registerA
+                addInstructionsAtControlFlowLabel(
+                    index,
+                    "invoke-static { v$register }, ${EXTENSION_CLASS_DESCRIPTOR}->updateLightDarkModeStatus(Ljava/lang/Enum;)V",
+                )
+            }
         }
 
         // Add setting to force cairo settings fragment on/off.
-        cairoFragmentConfigFingerprint.method.insertFeatureFlagBooleanOverride(
+        cairoFragmentConfigFingerprint.method.insertLiteralOverride(
             CAIRO_CONFIG_LITERAL_VALUE,
-            "$activityHookClassDescriptor->useCairoSettingsFragment(Z)Z"
+            "$EXTENSION_CLASS_DESCRIPTOR->useCairoSettingsFragment(Z)Z"
         )
     }
 
@@ -277,50 +344,78 @@ object PreferenceScreen : BasePreferenceScreen() {
     val ADS = Screen(
         key = "revanced_settings_screen_01_ads",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_01_ads",
+        layout = "@layout/preference_with_icon",
     )
     val ALTERNATIVE_THUMBNAILS = Screen(
         key = "revanced_settings_screen_02_alt_thumbnails",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_02_alt_thumbnails",
+        layout = "@layout/preference_with_icon",
         sorting = Sorting.UNSORTED,
     )
     val FEED = Screen(
         key = "revanced_settings_screen_03_feed",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_03_feed",
+        layout = "@layout/preference_with_icon",
     )
     val GENERAL_LAYOUT = Screen(
         key = "revanced_settings_screen_04_general",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_04_general",
+        layout = "@layout/preference_with_icon",
     )
     val PLAYER = Screen(
         key = "revanced_settings_screen_05_player",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_05_player",
+        layout = "@layout/preference_with_icon",
     )
-
     val SHORTS = Screen(
         key = "revanced_settings_screen_06_shorts",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_06_shorts",
+        layout = "@layout/preference_with_icon",
     )
-
     val SEEKBAR = Screen(
         key = "revanced_settings_screen_07_seekbar",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_07_seekbar",
+        layout = "@layout/preference_with_icon",
     )
     val SWIPE_CONTROLS = Screen(
         key = "revanced_settings_screen_08_swipe_controls",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_08_swipe_controls",
+        layout = "@layout/preference_with_icon",
         sorting = Sorting.UNSORTED,
     )
-
-    // RYD and SB are items 9 and 10.
-    // Menus are added in their own patch because they use an Intent and not a Screen.
-
+    val RETURN_YOUTUBE_DISLIKE = Screen(
+        key = "revanced_settings_screen_09_return_youtube_dislike",
+        summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_09_return_youtube_dislike",
+        layout = "@layout/preference_with_icon",
+        sorting = Sorting.UNSORTED,
+    )
+    val SPONSORBLOCK = Screen(
+        key = "revanced_settings_screen_10_sponsorblock",
+        summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_10_sponsorblock",
+        layout = "@layout/preference_with_icon",
+        sorting = Sorting.UNSORTED,
+    )
     val MISC = Screen(
         key = "revanced_settings_screen_11_misc",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_11_misc",
+        layout = "@layout/preference_with_icon",
     )
     val VIDEO = Screen(
         key = "revanced_settings_screen_12_video",
         summaryKey = null,
+        icon = "@drawable/revanced_settings_screen_12_video",
+        layout = "@layout/preference_with_icon",
         sorting = Sorting.BY_KEY,
     )
 

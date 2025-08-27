@@ -1,12 +1,14 @@
 package app.revanced.patches.youtube.interaction.seekbar
 
 import app.revanced.patcher.fingerprint
+import app.revanced.util.containsLiteralInstruction
 import app.revanced.util.getReference
-import app.revanced.util.indexOfFirstInstruction
+import app.revanced.util.indexOfFirstInstructionReversed
 import app.revanced.util.literal
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 internal val swipingUpGestureParentFingerprint = fingerprint {
     returns("Z")
@@ -55,25 +57,6 @@ internal val disableFastForwardGestureFingerprint = fingerprint {
     }
 }
 
-internal val disableFastForwardNoticeFingerprint = fingerprint {
-    accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
-    returns("V")
-    parameters()
-    opcodes(
-        Opcode.CHECK_CAST,
-        Opcode.IGET_OBJECT,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.MOVE_RESULT,
-    )
-    custom { method, _ ->
-        method.name == "run" && method.indexOfFirstInstruction {
-            // In later targets the code is found in different methods with different strings.
-            val string = getReference<StringReference>()?.string
-            string == "Failed to easy seek haptics vibrate." || string == "search_landing_cache_key"
-        } >= 0
-    }
-}
-
 internal val onTouchEventHandlerFingerprint = fingerprint {
     accessFlags(AccessFlags.PUBLIC, AccessFlags.PUBLIC)
     returns("Z")
@@ -101,14 +84,17 @@ internal val seekbarTappingFingerprint = fingerprint {
     accessFlags(AccessFlags.PUBLIC, AccessFlags.FINAL)
     returns("Z")
     parameters("L")
-    opcodes(
-        Opcode.IPUT_OBJECT,
-        Opcode.INVOKE_VIRTUAL,
-        // Insert seekbar tapping instructions here.
-        Opcode.RETURN,
-        Opcode.INVOKE_VIRTUAL,
-    )
-    literal { Integer.MAX_VALUE.toLong() }
+    custom { method, _ ->
+        method.name == "onTouchEvent"
+                && method.containsLiteralInstruction(Integer.MAX_VALUE.toLong())
+                && indexOfNewPointInstruction(method) >= 0
+    }
+}
+
+internal fun indexOfNewPointInstruction(method: Method) = method.indexOfFirstInstructionReversed {
+    val reference = getReference<MethodReference>()
+    reference?.definingClass == "Landroid/graphics/Point;"
+            && reference.name == "<init>"
 }
 
 internal val slideToSeekFingerprint = fingerprint {

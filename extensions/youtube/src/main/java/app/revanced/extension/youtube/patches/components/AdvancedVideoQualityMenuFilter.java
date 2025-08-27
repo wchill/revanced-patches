@@ -1,12 +1,10 @@
 package app.revanced.extension.youtube.patches.components;
 
-import androidx.annotation.Nullable;
-
 import app.revanced.extension.youtube.patches.playback.quality.AdvancedVideoQualityMenuPatch;
 import app.revanced.extension.youtube.settings.Settings;
 
 /**
- * Abuse LithoFilter for {@link AdvancedVideoQualityMenuPatch}.
+ * LithoFilter for {@link AdvancedVideoQualityMenuPatch}.
  */
 public final class AdvancedVideoQualityMenuFilter extends Filter {
     // Must be volatile or synchronized, as litho filtering runs off main thread
@@ -21,7 +19,7 @@ public final class AdvancedVideoQualityMenuFilter extends Filter {
     }
 
     @Override
-    boolean isFiltered(@Nullable String identifier, String path, byte[] protobufBufferArray,
+    boolean isFiltered(String identifier, String path, byte[] buffer,
                        StringFilterGroup matchedGroup, FilterContentType contentType, int contentIndex) {
         isVideoQualityMenuVisible = true;
 
