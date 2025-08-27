@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -19,7 +20,9 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import app.revanced.extension.boostforreddit.utils.CacheUtils;
 import app.revanced.extension.boostforreddit.utils.EditableObjectNode;
+import app.revanced.extension.boostforreddit.utils.LoggingUtils;
 import app.revanced.extension.boostforreddit.utils.MarkdownRenderer;
 import app.revanced.extension.boostforreddit.http.arcticshift.ArcticShift;
 import app.revanced.extension.boostforreddit.http.AutoSavingCache;
@@ -27,6 +30,7 @@ import app.revanced.extension.boostforreddit.http.HttpUtils;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackMachine;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackResponse;
 import app.revanced.extension.boostforreddit.utils.Emojis;
+import app.revanced.extension.shared.Logger;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -63,7 +67,6 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
                 data = handle4xx(request, submissionId);
             }
         }
-        // CacheUtils.writeStringToFile("/data/data/com.rubenmayayo.reddit/test.json", HttpUtils.getStringFromJson(data));
         return HttpUtils.makeJsonResponse(request, data);
     }
 
@@ -87,10 +90,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
             Map<String, EditableObjectNode> removedComments = new HashMap<>();
             List<EditableObjectNode> topLevelReplies = new ArrayList<>();
             for (JsonNode comment : comments) {
-                topLevelReplies.add(new EditableObjectNode(Map.of(
-                        "kind", new TextNode("t1"),
-                        "data", findDeletedComments(comment, removedComments))
-                ));
+                topLevelReplies.add(findDeletedComments(comment.get("data"), removedComments));
             }
             if (!removedComments.isEmpty()) {
                 JsonNode jsonNode = ArcticShift.getIds(ArcticShift.SubmissionType.COMMENTS, removedComments.keySet());
@@ -103,6 +103,16 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
 
                 for (EditableObjectNode childNode : removedComments.values()) {
                     updateCommentJson(childNode, null);
+                    childNode.setIfUnset("saved", BooleanNode.FALSE);
+                    childNode.setIfUnset("controversiality", new IntNode(0));
+                    childNode.setIfUnset("score_hidden", BooleanNode.FALSE);
+                    childNode.setIfUnset("locked", BooleanNode.TRUE);
+                    childNode.setIfUnset("likes", NullNode.instance);
+                    if (childNode.get("body") != null) {
+                        String renderedHtml = MarkdownRenderer.render(childNode.get("body").asText());
+                        childNode.set("body_html", new TextNode(renderedHtml));
+                    }
+                    childNode.setIfUnset("link_id", new TextNode("t3_" + submissionId));
                 }
 
                 commentsListing = RedditApiUtils.createListing(commentsListing, topLevelReplies);
@@ -157,7 +167,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
         ArcticShift.updateSubmissionNode(editableNode, undeletedData.get("data").get(0));
         editableNode.set("archived", BooleanNode.TRUE);
         editableNode.set("stickied", BooleanNode.FALSE);
-        editableNode.set("locked", BooleanNode.TRUE);
+        editableNode.setIfUnset("locked", BooleanNode.TRUE);
         editableNode.set("saved", BooleanNode.FALSE);
         editableNode.set("clicked", BooleanNode.FALSE);
         editableNode.set("likes", NullNode.instance);
@@ -196,15 +206,21 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
             deletedCommentIds.put(wrappedComment.get("id").asText(), wrappedComment);
         }
         JsonNode replies = wrappedComment.get("replies");
-        if (replies != null && !replies.isNull() && !replies.asText().isEmpty()) {
-            ArrayNode newReplyArray = new ArrayNode(JsonNodeFactory.instance);
-            for (JsonNode reply : replies) {
-                EditableObjectNode wrappedReply = findDeletedComments(reply, deletedCommentIds);
-                newReplyArray.add(wrappedReply);
+        if (replies != null && !replies.isNull() && replies.get("data") != null) {
+            List<JsonNode> newReplies = new ArrayList<>();
+            for (JsonNode reply : replies.get("data").get("children")) {
+                EditableObjectNode wrappedReply = findDeletedComments(reply.get("data"), deletedCommentIds);
+                newReplies.add(wrappedReply);
             }
-            wrappedComment.set("replies", newReplyArray);
+            JsonNode newListing = RedditApiUtils.createListing(replies, newReplies);
+            wrappedComment.set("replies", newListing);
+        } else {
+            wrappedComment.set("replies", new TextNode(""));
         }
-        return wrappedComment;
+        return new EditableObjectNode(Map.of(
+                "kind", new TextNode("t1"),
+                "data", wrappedComment
+        ));
     }
 
     private void updateCommentJson(EditableObjectNode comment, JsonNode newComment) {
@@ -220,7 +236,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
         node.setIfUnset("saved", BooleanNode.FALSE);
         node.setIfUnset("controversiality", new IntNode(0));
         node.setIfUnset("score_hidden", BooleanNode.FALSE);
-        node.set("locked", BooleanNode.TRUE);
+        node.setIfUnset("locked", BooleanNode.TRUE);
         node.set("likes", NullNode.instance);
 
         if (node.get("body") != null) {
@@ -231,7 +247,7 @@ public class RedditSubmissionUndeleteInterceptor implements Interceptor {
         JsonNode replies = node.get("replies");
         if (replies == null) {
             node.set("replies", new TextNode(""));
-        } else {
+        } else if (!replies.isNull() && replies.getNodeType() == JsonNodeType.OBJECT) {
             EditableObjectNode newReplies = EditableObjectNode.wrap(replies);
             EditableObjectNode dataNode = EditableObjectNode.wrap(replies.get("data"));
             ArrayNode newReplyArray = new ArrayNode(JsonNodeFactory.instance);
