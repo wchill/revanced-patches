@@ -10,7 +10,6 @@ import app.revanced.extension.boostforreddit.http.imgur.ImgurUndeleteInterceptor
 import app.revanced.extension.boostforreddit.http.reddit.RedditMediaUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubredditUndeleteInterceptor;
-import app.revanced.extension.boostforreddit.http.redgifs.RedgifsApiInterceptor;
 import app.revanced.extension.boostforreddit.http.wayback.WaybackThrottlingInterceptor;
 import app.revanced.extension.boostforreddit.utils.LoggingUtils;
 import okhttp3.Call;
