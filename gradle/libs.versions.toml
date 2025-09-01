@@ -42,4 +42,4 @@ android-library = { id = "com.android.library" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
 
 [bundles]
-boost = ["jackson-databind-boost", "jraw-boost", "guava-boost", "okhttp", "slf4j-boost"]
+boost = ["jackson-databind-boost", "jraw-boost", "guava-boost", "okhttp", "slf4j-boost", "annotation"]

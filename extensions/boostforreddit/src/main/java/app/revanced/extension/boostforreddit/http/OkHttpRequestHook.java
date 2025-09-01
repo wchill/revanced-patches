@@ -77,8 +77,4 @@ public class OkHttpRequestHook {
                 .addNetworkInterceptor(new WaybackThrottlingInterceptor())
                 .addNetworkInterceptor(new ArcticShiftThrottlingInterceptor());
     }
-
-    public static OkHttpClient.Builder installRedgifsInterceptor() {
-        return new OkHttpClient.Builder().addNetworkInterceptor(new RedgifsApiInterceptor());
-    }
 }
