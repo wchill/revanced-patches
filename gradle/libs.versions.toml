@@ -38,8 +38,8 @@ slf4j-boost = { module = "org.slf4j:slf4j-api", version = "1.7.13" }
 guava-boost = { module = "com.google.guava:guava", version = "19.0" }
 
 [plugins]
-android-library = { id = "com.android.library", version.ref = "agp" }
+android-library = { id = "com.android.library" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
 
 [bundles]
-boost = ["jackson-databind-boost", "jraw-boost", "guava-boost", "okhttp", "slf4j-boost"]
+boost = ["jackson-databind-boost", "jraw-boost", "guava-boost", "slf4j-boost"]
