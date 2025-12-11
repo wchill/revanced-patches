@@ -31,3 +31,10 @@ internal val loginActivityAShouldOverrideUrlLoadingFingerprint = fingerprint {
         method.name == "shouldOverrideUrlLoading"
     }
 }
+
+internal val jrawNewUrlFingerprint = fingerprint {
+    custom { method, classDef ->
+        if (!classDef.endsWith("JrawUtils;")) return@custom false
+        method.name == "newUrl"
+    }
+}

@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import app.revanced.extension.boostforreddit.http.arcticshift.ArcticShiftThrottlingInterceptor;
@@ -115,5 +119,21 @@ public class HttpUtils {
                 .message("Service unavailable")
                 .request(request)
                 .build();
+    }
+
+    public static URL createUrl(String href) {
+        try {
+            URI uri = new URI(href);
+            String path = uri.getPath();
+            if (uri.getQuery() != null) {
+                path += "?" + uri.getQuery();
+            }
+            if (uri.getFragment() != null) {
+                path += "#" + uri.getFragment();
+            }
+            return new URL(uri.getScheme(), uri.getRawAuthority(), uri.getPort(), path, new NoOpUrlStreamHandler());
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new IllegalArgumentException("Malformed URL", e);
+        }
     }
 }

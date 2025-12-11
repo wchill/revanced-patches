@@ -33,4 +33,8 @@ public class LoggingUtils {
             Logger.printException(logSupplier::get, t);
         }
     }
+
+    public static void log(Object obj) {
+        logException(false, obj::toString);
+    }
 }
