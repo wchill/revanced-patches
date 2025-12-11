@@ -33,6 +33,21 @@ val spoofClientPatch = spoofClientPatch { clientIdOption, redirectUriOption ->
             }
         }
 
+        loginActivityAShouldOverrideUrlLoadingFingerprint.method.apply {
+            val index = indexOfFirstInstructionOrThrow {
+                opcode == Opcode.IF_EQZ
+            }
+            addInstructions(
+                index + 1,
+                """
+                const-string v1, "$redirectUriOption"
+                const-string v2, "http://localhost"
+                invoke-virtual {v6, v1, v2}, Ljava/lang/String;->replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;
+                move-result-object v6
+                """
+            )
+        }
+
         jrawNewUrlFingerprint.method.apply {
             val index = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.NEW_INSTANCE && getReference<TypeReference>()?.type == "Ljava/net/URL;"
