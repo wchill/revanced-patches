@@ -7,6 +7,7 @@ import java.util.Map;
 
 import app.revanced.extension.boostforreddit.http.arcticshift.ArcticShiftThrottlingInterceptor;
 import app.revanced.extension.boostforreddit.http.imgur.ImgurUndeleteInterceptor;
+import app.revanced.extension.boostforreddit.http.reddit.RedditFixAudioInDownloadsInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditMediaUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.revanced.extension.boostforreddit.http.reddit.RedditSubredditUndeleteInterceptor;
@@ -69,11 +70,12 @@ public class OkHttpRequestHook {
 
     public static OkHttpClient.Builder installInterceptor(OkHttpClient.Builder builder) {
         return builder
-                .addInterceptor(new ImgurUndeleteInterceptor())
-                .addInterceptor(new RedditMediaUndeleteInterceptor())
-                .addInterceptor(new RedditSubredditUndeleteInterceptor())
-                .addInterceptor(new RedditSubmissionUndeleteInterceptor())
-                .addNetworkInterceptor(new WaybackThrottlingInterceptor())
-                .addNetworkInterceptor(new ArcticShiftThrottlingInterceptor());
+            .addInterceptor(new ImgurUndeleteInterceptor())
+            .addInterceptor(new RedditMediaUndeleteInterceptor())
+            .addInterceptor(new RedditSubredditUndeleteInterceptor())
+            .addInterceptor(new RedditSubmissionUndeleteInterceptor())
+            .addInterceptor(new RedditFixAudioInDownloadsInterceptor())
+            .addNetworkInterceptor(new WaybackThrottlingInterceptor())
+            .addNetworkInterceptor(new ArcticShiftThrottlingInterceptor());
     }
 }
