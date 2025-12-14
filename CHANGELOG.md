@@ -1,3 +1,10 @@
+## [5.46.3](https://github.com/wchill/revanced-patches/compare/v5.46.2...v5.46.3) (2025-12-14)
+
+
+### Bug Fixes
+
+* **Boost:** Parse DASH playlist in order to retrieve correct audio URL ([11f18c9](https://github.com/wchill/revanced-patches/commit/11f18c9b57adb550f701ed4eb4f97d1230e52bd3))
+
 # [5.46.0](https://github.com/ReVanced/revanced-patches/compare/v5.45.0...v5.46.0) (2025-11-10)
 
 
