@@ -2,12 +2,12 @@ group = "app.revanced"
 
 patches {
     about {
-        name = "ReVanced Patches"
+        name = "wchill's Patches"
         description = "Patches for ReVanced"
-        source = "git@github.com:revanced/revanced-patches.git"
-        author = "ReVanced"
-        contact = "contact@revanced.app"
-        website = "https://revanced.app"
+        source = "git@github.com:wchill/revanced-patches.git"
+        author = "wchill"
+        contact = "github.com/wchill"
+        website = "https://github.com/wchill/revanced-patches"
         license = "GNU General Public License v3.0"
     }
 }
