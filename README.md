@@ -21,8 +21,30 @@ This is a fork of https://github.com/ReVanced/revanced-patches that includes ext
     * Caching is implemented to try and limit the impact of this.
 * Imgur images and albums are automatically loaded from the Wayback Machine if a 404 is detected.
 * The context menu for posts now contains additional options for opening a site in the Wayback Machine or archive.is. This is useful for if the undeleting functionality has issues or you want to bypass a content paywall.
+* Fixes audio in downloaded videos for all videos. The official fix fixes this for new videos but breaks it for older ones.
 
-## Instructions for patching user agent
+## Patch bundle URLs for use with Compose/Universal ReVanced Manager
+There may be a lag time of up to 1 hour between a new release and these bundle URLs being updated.
+
+* Latest (includes pre-release versions): `https://raw.githubusercontent.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/wchill-patch-bundles/wchill-latest-patches-bundle.json`
+* Stable (no pre-release versions): `https://raw.githubusercontent.com/Jman-Github/ReVanced-Patch-Bundles/bundles/patch-bundles/wchill-patch-bundles/wchill-stable-patches-bundle.json`
+
+## Updated instructions on usage (if you don't have an OAuth installed app set up already)
+Instructions on usage:
+
+1. Back up your settings in Boost and then uninstall it.
+
+2. Grab a fresh copy of the Boost APK from [here](https://www.apkmirror.com/apk/ruben-mayayo/boost-for-reddit/boost-for-reddit-1-12-12-release/boost-for-reddit-1-12-12-android-apk-download/). Don't install it.
+
+3. Change your ReVanced Manager settings to point to my patches as shown [here](https://github.com/user-attachments/assets/0094627f-fb5e-45fd-97f3-6ee24d21027e)
+
+4. Install RedReader from the Play Store and login with it. After you login, you should get an email with the title `You’ve authorized a new app in your Reddit account`. Look for `App ID:` in that email; note the random looking string as it will be used in the next step. You can uninstall RedReader after this if you want.
+
+5. Open the Boost APK in ReVanced Manager and make sure the Spoof client patch is enabled. For OAuth client ID, copy the random looking text from step 4. Set redirect URL to `redreader://rr_oauth_redir`. Set user agent to `RedReader/1.25`.
+
+6. Patch and install, your Boost should work now. You can restore your settings using the backup you made earlier.
+
+## Old instructions on usage (for if you already have an OAuth installed app)
 Instructions on usage (from https://www.reddit.com/r/revancedapp/comments/1j4s7bd/how_to_fix_the_403_error_for_boost_using_revanced/):
 
 1. Back up your settings in Boost and then uninstall it.
@@ -31,7 +53,7 @@ Instructions on usage (from https://www.reddit.com/r/revancedapp/comments/1j4s7b
 
 3. Change your ReVanced Manager settings to point to my patches as shown [here](https://github.com/user-attachments/assets/0094627f-fb5e-45fd-97f3-6ee24d21027e)
 
-4. Create an installed app [here](https://www.reddit.com/prefs/apps/). For redirect uri, set it to `http://127.0.0.1:8080`. You can leave about url blank.
+4. Create an installed app [here](https://www.reddit.com/prefs/apps/) (note: this is no longer possible). For redirect uri, set it to `http://127.0.0.1:8080`. You can leave about url blank.
 
 5. Open the Boost APK in ReVanced Manager and make sure the Spoof client patch is enabled. For OAuth client ID, copy the random looking text from https://www.reddit.com/prefs/apps (below "Installed app"). Leave Redirect URI alone. For User agent, set it to something like `android:com.yourusername.reddit:v1.0 (by /u/yourusername)` (replace with your username).
 
@@ -41,9 +63,9 @@ See https://github.com/ReVanced/revanced-patches/issues/4549#issuecomment-270296
 
 # FAQ
 
-The patches don't show up in the patcher after I change the source
+I was using an installed app before the RedReader update, do I need to repatch?
 
-* The patcher is buggy and sometimes the patches don't show up. Try force closing the app, clearing app cache and then reopening the app (may take several attempts). You can also try toggling Wi-Fi off and/or toggling airplane mode before reopening the app.
+* No, you can keep using the app as is. You can repatch to get new fixes or whatnot, but you can continue to use the old instructions.
 
 I get "Error: Invalid request to Oauth API"
 
@@ -62,6 +84,12 @@ I get 401 when I open the app
 I'm getting 400 Bad Request while logged in
 
 * Try logging out and logging back in if you didn't uninstall the app in step 1
+
+I'm getting a server error or other error not described above when attempting to login.
+
+* There are at least 2 different causes for this:
+    * Reddit doesn't like the network you're logging in from (corporate/work network, country with banned IP ranges due to abuse, etc). Try using a VPN.
+    * Reddit detects usage of the official Android SDK emulator and blocks the login. This might also apply to other emulators or devices. Try on another device.
 
 I can't check the box for Spoof client; I get `Notice: This patch contains a required option that is not supported by this app`
 
