@@ -1,3 +1,9 @@
+# NO LONGER BEING MAINTAINED
+
+Please read https://www.reddit.com/r/BoostForReddit/comments/1q2he9s/fyi_migration_to_morphe/ for details.
+
+----------------------------------------
+
 This is a fork of https://github.com/ReVanced/revanced-patches that includes extra patches specifically for Boost for Reddit.
 
 ## Differences from official patch set
